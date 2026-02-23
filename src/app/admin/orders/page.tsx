@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAdmin, Order } from "@/context/AdminContext";
-import { ChevronDown, Trash2, Eye, X, CheckCircle } from "lucide-react";
+import { ChevronDown, Trash2, Eye, X, CheckCircle, RefreshCw } from "lucide-react";
 
 const statusOptions: { value: Order["status"]; label: string; color: string }[] = [
     { value: "new", label: "Mới", color: "bg-blue-500/20 text-blue-400" },
@@ -14,10 +14,17 @@ const statusOptions: { value: Order["status"]; label: string; color: string }[] 
 ];
 
 export default function AdminOrders() {
-    const { orders, updateOrderStatus, deleteOrder } = useAdmin();
+    const { orders, updateOrderStatus, deleteOrder, reloadData, isLoading } = useAdmin();
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [isReloading, setIsReloading] = useState(false);
+
+    const handleReload = async () => {
+        setIsReloading(true);
+        await reloadData();
+        setIsReloading(false);
+    };
 
     const formatCurrency = (n: number) =>
         new Intl.NumberFormat("vi-VN").format(n) + "₫";
@@ -32,11 +39,21 @@ export default function AdminOrders() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold">Quản lý đơn hàng</h1>
-                <p className="text-gray-400 text-sm mt-1">
-                    {orders.length} đơn hàng
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">Quản lý đơn hàng</h1>
+                    <p className="text-gray-400 text-sm mt-1">
+                        {orders.length} đơn hàng
+                    </p>
+                </div>
+                <button
+                    onClick={handleReload}
+                    disabled={isReloading}
+                    className="p-2 text-gray-400 hover:text-pink-400 hover:bg-pink-500/10 rounded-lg transition-all duration-200 disabled:opacity-50"
+                    title="Tải lại dữ liệu"
+                >
+                    <RefreshCw size={18} className={isReloading ? "animate-spin" : ""} />
+                </button>
             </div>
 
             {/* Status summary */}

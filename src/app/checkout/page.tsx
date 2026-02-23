@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAdmin } from "@/context/AdminContext";
+import { useAuth } from "@/context/AuthContext";
 import { formatPrice } from "@/data/products";
 import Link from "next/link";
 
@@ -58,6 +59,7 @@ export default function CheckoutPage() {
     const router = useRouter();
     const { items, totalPrice, totalItems, clearCart } = useCart();
     const { addOrder } = useAdmin();
+    const { user, setIsAuthModalOpen } = useAuth();
 
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,6 +86,13 @@ export default function CheckoutPage() {
 
     // Validation
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Auto-fill from auth user
+    useEffect(() => {
+        if (user) {
+            if (!customerName && user.fullName) setCustomerName(user.fullName);
+        }
+    }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Compose full address
     const customerAddress = [streetAddress, wardName, districtName, provinceName]
@@ -186,6 +195,7 @@ export default function CheckoutPage() {
                 customerAddress: customerAddress.trim(),
                 customerNote: customerNote.trim() || undefined,
                 paymentMethod: "bank",
+                userId: user?.id,
             });
 
             clearCart();
@@ -216,6 +226,7 @@ export default function CheckoutPage() {
                 customerAddress: customerAddress.trim(),
                 customerNote: customerNote.trim() || undefined,
                 paymentMethod: "cod",
+                userId: user?.id,
             });
 
             clearCart();
@@ -335,6 +346,23 @@ export default function CheckoutPage() {
                                     </h2>
 
                                     <div className="space-y-5">
+                                        {/* Login suggestion */}
+                                        {!user && (
+                                            <div className="flex items-center gap-3 p-4 bg-primary-50/50 border border-primary-100 rounded-2xl">
+                                                <User className="text-primary-400 flex-shrink-0" size={20} />
+                                                <div className="flex-1">
+                                                    <p className="text-sm text-gray-700">
+                                                        <button
+                                                            onClick={() => setIsAuthModalOpen(true)}
+                                                            className="text-primary-500 font-semibold hover:text-primary-600"
+                                                        >
+                                                            Đăng nhập
+                                                        </button>{" "}
+                                                        để theo dõi đơn hàng và tự động điền thông tin
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                         {/* Name */}
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">

@@ -32,6 +32,7 @@ export interface Order {
     customerAddress: string;
     customerNote?: string;
     paymentMethod?: "cod" | "bank";
+    userId?: string;
     status: "new" | "pending_payment" | "processing" | "delivering" | "completed" | "cancelled";
     createdAt: string;
     updatedAt: string;
@@ -58,9 +59,11 @@ interface AdminContextType {
     addOrder: (order: Omit<Order, "id" | "createdAt" | "updatedAt" | "status">) => void;
     updateOrderStatus: (id: string, status: Order["status"]) => void;
     deleteOrder: (id: string) => void;
+    getOrdersByUserId: (userId: string) => Order[];
 
-    // Loading state
+    // Loading & Reload
     isLoading: boolean;
+    reloadData: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -134,6 +137,7 @@ function dbToOrder(row: Record<string, unknown>): Order {
         customerPhone: (row.customer_phone as string) || "",
         customerAddress: (row.customer_address as string) || "",
         customerNote: (row.customer_note as string) || undefined,
+        userId: (row.user_id as string) || undefined,
         status: row.status as Order["status"],
         createdAt: row.created_at as string,
         updatedAt: row.updated_at as string,
@@ -149,55 +153,54 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [dbReady, setDbReady] = useState(false);
 
+    // Shared load function — used on mount and for manual reload
+    const loadData = useCallback(async () => {
+        if (!supabase) {
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
+        try {
+            // Try loading products from DB
+            const { data: dbProducts, error: prodErr } = await supabase
+                .from("products")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            if (!prodErr && dbProducts && dbProducts.length > 0) {
+                setProducts(dbProducts.map(dbToProduct));
+            } else if (!prodErr && dbProducts && dbProducts.length === 0) {
+                const rows = defaultProducts.map((p) => productToDb(p));
+                await supabase.from("products").insert(rows);
+                setProducts(defaultProducts);
+            }
+
+            // Load transactions
+            const { data: dbTransactions } = await supabase
+                .from("transactions")
+                .select("*")
+                .order("created_at", { ascending: false });
+            if (dbTransactions) setTransactions(dbTransactions.map(dbToTransaction));
+
+            // Load orders
+            const { data: dbOrders } = await supabase
+                .from("orders")
+                .select("*")
+                .order("created_at", { ascending: false });
+            if (dbOrders) setOrders(dbOrders.map(dbToOrder));
+
+            setDbReady(true);
+        } catch (err) {
+            console.error("Supabase load error, falling back to defaults:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     // Load data from Supabase on mount
     useEffect(() => {
-        async function loadData() {
-            if (!supabase) {
-                // No Supabase configured, use defaults
-                setIsLoading(false);
-                return;
-            }
-            try {
-                // Try loading products from DB
-                const { data: dbProducts, error: prodErr } = await supabase
-                    .from("products")
-                    .select("*")
-                    .order("created_at", { ascending: false });
-
-                if (!prodErr && dbProducts && dbProducts.length > 0) {
-                    setProducts(dbProducts.map(dbToProduct));
-                } else if (!prodErr && dbProducts && dbProducts.length === 0) {
-                    // DB is empty — seed with default products
-                    const rows = defaultProducts.map((p) => productToDb(p));
-                    await supabase.from("products").insert(rows);
-                    setProducts(defaultProducts);
-                }
-
-                // Load transactions
-                const { data: dbTransactions } = await supabase
-                    .from("transactions")
-                    .select("*")
-                    .order("created_at", { ascending: false });
-                if (dbTransactions) setTransactions(dbTransactions.map(dbToTransaction));
-
-                // Load orders
-                const { data: dbOrders } = await supabase
-                    .from("orders")
-                    .select("*")
-                    .order("created_at", { ascending: false });
-                if (dbOrders) setOrders(dbOrders.map(dbToOrder));
-
-                setDbReady(true);
-            } catch (err) {
-                console.error("Supabase load error, falling back to defaults:", err);
-                // Fallback: keep defaultProducts
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
         loadData();
-    }, []);
+    }, [loadData]);
 
     // ---- Products ----
     const addProduct = useCallback(
@@ -301,6 +304,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                     customer_phone: newOrder.customerPhone,
                     customer_address: newOrder.customerAddress,
                     customer_note: newOrder.customerNote || null,
+                    user_id: newOrder.userId || null,
                     status: dbStatus,
                 });
             }
@@ -362,6 +366,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         [dbReady]
     );
 
+    const getOrdersByUserId = useCallback(
+        (userId: string) => orders.filter((o) => o.userId === userId),
+        [orders]
+    );
+
     return (
         <AdminContext.Provider
             value={{
@@ -380,7 +389,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 addOrder,
                 updateOrderStatus,
                 deleteOrder,
+                getOrdersByUserId,
                 isLoading,
+                reloadData: loadData,
             }}
         >
             {children}
