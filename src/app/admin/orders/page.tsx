@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useAdmin, Order } from "@/context/AdminContext";
-import { ChevronDown, Trash2, Eye, X } from "lucide-react";
+import { ChevronDown, Trash2, Eye, X, CheckCircle } from "lucide-react";
 
 const statusOptions: { value: Order["status"]; label: string; color: string }[] = [
     { value: "new", label: "Mới", color: "bg-blue-500/20 text-blue-400" },
+    { value: "pending_payment", label: "Chờ thanh toán", color: "bg-amber-500/20 text-amber-400" },
     { value: "processing", label: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400" },
     { value: "delivering", label: "Đang giao", color: "bg-purple-500/20 text-purple-400" },
     { value: "completed", label: "Hoàn thành", color: "bg-emerald-500/20 text-emerald-400" },
@@ -39,7 +40,7 @@ export default function AdminOrders() {
             </div>
 
             {/* Status summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {statusOptions.map((s) => {
                     const count = orders.filter((o) => o.status === s.value).length;
                     return (
@@ -49,8 +50,8 @@ export default function AdminOrders() {
                                 setFilterStatus(filterStatus === s.value ? "all" : s.value)
                             }
                             className={`p-3 rounded-xl border text-left transition-colors ${filterStatus === s.value
-                                    ? "border-pink-500 bg-gray-900"
-                                    : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                                ? "border-pink-500 bg-gray-900"
+                                : "border-gray-800 bg-gray-900 hover:border-gray-700"
                                 }`}
                         >
                             <p className="text-lg font-bold">{count}</p>
@@ -133,6 +134,18 @@ export default function AdminOrders() {
                                         </td>
                                         <td className="py-3 px-4">
                                             <div className="flex items-center justify-end gap-1">
+                                                {order.status === "pending_payment" && (
+                                                    <button
+                                                        onClick={() =>
+                                                            updateOrderStatus(order.id, "processing")
+                                                        }
+                                                        className="px-2.5 py-1.5 text-xs bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors flex items-center gap-1 font-medium"
+                                                        title="Xác nhận đã nhận thanh toán"
+                                                    >
+                                                        <CheckCircle size={14} />
+                                                        Duyệt
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => setSelectedOrder(order)}
                                                     className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"

@@ -31,7 +31,8 @@ export interface Order {
     customerPhone: string;
     customerAddress: string;
     customerNote?: string;
-    status: "new" | "processing" | "delivering" | "completed" | "cancelled";
+    paymentMethod?: "cod" | "bank";
+    status: "new" | "pending_payment" | "processing" | "delivering" | "completed" | "cancelled";
     createdAt: string;
     updatedAt: string;
 }
@@ -284,12 +285,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
             const newOrder: Order = {
                 ...order,
                 id: generateId(),
-                status: "new",
+                status: order.paymentMethod === "bank" ? "pending_payment" : "new",
                 createdAt: now,
                 updatedAt: now,
             };
             setOrders((prev) => [newOrder, ...prev]);
             if (dbReady && supabase) {
+                // Map pending_payment to "new" for DB (column constraint)
+                const dbStatus = newOrder.status === "pending_payment" ? "new" : newOrder.status;
                 await supabase.from("orders").insert({
                     id: newOrder.id,
                     items: newOrder.items,
@@ -298,7 +301,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                     customer_phone: newOrder.customerPhone,
                     customer_address: newOrder.customerAddress,
                     customer_note: newOrder.customerNote || null,
-                    status: newOrder.status,
+                    status: dbStatus,
                 });
             }
         },
@@ -308,6 +311,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const updateOrderStatus = useCallback(
         async (id: string, status: Order["status"]) => {
             const now = new Date().toISOString();
+            const order = orders.find((o) => o.id === id);
+            const prevStatus = order?.status;
+
             setOrders((prev) =>
                 prev.map((o) =>
                     o.id === id ? { ...o, status, updatedAt: now } : o
@@ -319,8 +325,31 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                     .update({ status, updated_at: now })
                     .eq("id", id);
             }
+
+            const txPrefix = `Đơn hàng #${id.slice(0, 8).toUpperCase()}`;
+
+            // Status changed TO completed → create income transaction
+            if (status === "completed" && prevStatus !== "completed" && order) {
+                await addTransaction({
+                    type: "income",
+                    amount: order.totalPrice,
+                    description: `${txPrefix} — ${order.customerName}`,
+                    category: "Bán hàng",
+                    date: now,
+                });
+            }
+
+            // Status changed FROM completed → remove associated transaction
+            if (prevStatus === "completed" && status !== "completed") {
+                const linkedTx = transactions.find(
+                    (t) => t.description.startsWith(txPrefix) && t.type === "income"
+                );
+                if (linkedTx) {
+                    await deleteTransaction(linkedTx.id);
+                }
+            }
         },
-        [dbReady]
+        [dbReady, orders, transactions, addTransaction, deleteTransaction]
     );
 
     const deleteOrder = useCallback(

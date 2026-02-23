@@ -66,6 +66,7 @@ export default function AdminDashboard() {
 
     const statusLabels: Record<string, { label: string; color: string }> = {
         new: { label: "Mới", color: "bg-blue-500/20 text-blue-400" },
+        pending_payment: { label: "Chờ thanh toán", color: "bg-amber-500/20 text-amber-400" },
         processing: { label: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400" },
         delivering: { label: "Đang giao", color: "bg-purple-500/20 text-purple-400" },
         completed: { label: "Hoàn thành", color: "bg-emerald-500/20 text-emerald-400" },
@@ -165,8 +166,8 @@ export default function AdminDashboard() {
                                     </div>
                                     <span
                                         className={`text-sm font-semibold ${tx.type === "income"
-                                                ? "text-emerald-400"
-                                                : "text-red-400"
+                                            ? "text-emerald-400"
+                                            : "text-red-400"
                                             }`}
                                     >
                                         {tx.type === "income" ? "+" : "-"}

@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/data/products";
@@ -17,6 +18,7 @@ export default function CartDrawer() {
         isCartOpen,
         setIsCartOpen,
     } = useCart();
+    const router = useRouter();
 
     return (
         <AnimatePresence>
@@ -162,7 +164,13 @@ export default function CartDrawer() {
                                 <p className="text-xs text-gray-400">
                                     Phí vận chuyển sẽ được tính ở bước thanh toán
                                 </p>
-                                <button className="w-full py-4 bg-forest-500 hover:bg-forest-600 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
+                                <button
+                                    onClick={() => {
+                                        setIsCartOpen(false);
+                                        router.push("/checkout");
+                                    }}
+                                    className="w-full py-4 bg-forest-500 hover:bg-forest-600 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl"
+                                >
                                     Thanh toán ({totalItems} sản phẩm)
                                 </button>
                                 <button
