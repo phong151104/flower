@@ -151,6 +151,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     // Load data from Supabase on mount
     useEffect(() => {
         async function loadData() {
+            if (!supabase) {
+                // No Supabase configured, use defaults
+                setIsLoading(false);
+                return;
+            }
             try {
                 // Try loading products from DB
                 const { data: dbProducts, error: prodErr } = await supabase
@@ -197,7 +202,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const addProduct = useCallback(
         async (product: Product) => {
             setProducts((prev) => [product, ...prev]);
-            if (dbReady) {
+            if (dbReady && supabase) {
                 await supabase.from("products").insert(productToDb(product));
             }
         },
@@ -209,7 +214,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
             setProducts((prev) =>
                 prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
             );
-            if (dbReady) {
+            if (dbReady && supabase) {
                 await supabase.from("products").update(productToDb(updates)).eq("id", id);
             }
         },
@@ -219,7 +224,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const deleteProduct = useCallback(
         async (id: string) => {
             setProducts((prev) => prev.filter((p) => p.id !== id));
-            if (dbReady) {
+            if (dbReady && supabase) {
                 await supabase.from("products").delete().eq("id", id);
             }
         },
@@ -240,7 +245,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 createdAt: new Date().toISOString(),
             };
             setTransactions((prev) => [newTx, ...prev]);
-            if (dbReady) {
+            if (dbReady && supabase) {
                 await supabase.from("transactions").insert({
                     id: newTx.id,
                     type: newTx.type,
@@ -257,7 +262,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const deleteTransaction = useCallback(
         async (id: string) => {
             setTransactions((prev) => prev.filter((t) => t.id !== id));
-            if (dbReady) {
+            if (dbReady && supabase) {
                 await supabase.from("transactions").delete().eq("id", id);
             }
         },
@@ -284,7 +289,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 updatedAt: now,
             };
             setOrders((prev) => [newOrder, ...prev]);
-            if (dbReady) {
+            if (dbReady && supabase) {
                 await supabase.from("orders").insert({
                     id: newOrder.id,
                     items: newOrder.items,
@@ -308,7 +313,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                     o.id === id ? { ...o, status, updatedAt: now } : o
                 )
             );
-            if (dbReady) {
+            if (dbReady && supabase) {
                 await supabase
                     .from("orders")
                     .update({ status, updated_at: now })
@@ -321,7 +326,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const deleteOrder = useCallback(
         async (id: string) => {
             setOrders((prev) => prev.filter((o) => o.id !== id));
-            if (dbReady) {
+            if (dbReady && supabase) {
                 await supabase.from("orders").delete().eq("id", id);
             }
         },
