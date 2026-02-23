@@ -26,6 +26,7 @@ import { formatPrice } from "@/data/products";
 const statusSteps: { key: Order["status"]; label: string; icon: typeof Clock }[] = [
     { key: "new", label: "Đơn mới", icon: ShoppingBag },
     { key: "processing", label: "Đang xử lý", icon: Clock },
+    { key: "paid", label: "Thanh toán thành công", icon: CreditCard },
     { key: "delivering", label: "Đang giao", icon: Truck },
     { key: "completed", label: "Hoàn thành", icon: CheckCircle2 },
 ];
@@ -34,8 +35,9 @@ const statusIndex: Record<string, number> = {
     new: 0,
     pending_payment: 0,
     processing: 1,
-    delivering: 2,
-    completed: 3,
+    paid: 2,
+    delivering: 3,
+    completed: 4,
     cancelled: -1,
 };
 

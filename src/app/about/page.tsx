@@ -70,7 +70,7 @@ const values = [
 ];
 
 const milestones = [
-    { year: "2020", title: "Khởi đầu", desc: "Bloomella ra đời từ một shop hoa nhỏ tại HCM" },
+    { year: "2020", title: "Khởi đầu", desc: "Bloomella ra đời từ một shop hoa nhỏ tại Hà Nội" },
     { year: "2021", title: "Mở rộng", desc: "Phục vụ hơn 5,000 khách hàng, mở thêm 2 chi nhánh" },
     { year: "2023", title: "Đổi mới", desc: "Tích hợp AI vào thiết kế bó hoa tùy chỉnh" },
     { year: "2024", title: "Phát triển", desc: "Top 10 shop hoa được yêu thích nhất Việt Nam" },

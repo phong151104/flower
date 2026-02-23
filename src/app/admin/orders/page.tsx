@@ -8,6 +8,7 @@ const statusOptions: { value: Order["status"]; label: string; color: string }[] 
     { value: "new", label: "Mới", color: "bg-blue-500/20 text-blue-400" },
     { value: "pending_payment", label: "Chờ thanh toán", color: "bg-amber-500/20 text-amber-400" },
     { value: "processing", label: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400" },
+    { value: "paid", label: "Thanh toán thành công", color: "bg-teal-500/20 text-teal-400" },
     { value: "delivering", label: "Đang giao", color: "bg-purple-500/20 text-purple-400" },
     { value: "completed", label: "Hoàn thành", color: "bg-emerald-500/20 text-emerald-400" },
     { value: "cancelled", label: "Đã hủy", color: "bg-red-500/20 text-red-400" },

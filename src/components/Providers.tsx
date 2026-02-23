@@ -7,6 +7,7 @@ import { AdminProvider } from "@/context/AdminContext";
 import CartDrawer from "@/components/CartDrawer";
 import WishlistDrawer from "@/components/WishlistDrawer";
 import AuthModal from "@/components/AuthModal";
+import FloatingOrderButton from "@/components/FloatingOrderButton";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
     return (
@@ -18,6 +19,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                         <CartDrawer />
                         <WishlistDrawer />
                         <AuthModal />
+                        <FloatingOrderButton />
                     </WishlistProvider>
                 </CartProvider>
             </AdminProvider>

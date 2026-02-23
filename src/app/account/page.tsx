@@ -27,6 +27,7 @@ const statusConfig: Record<Order["status"], { label: string; color: string; bg: 
     new: { label: "Mới", color: "text-blue-600", bg: "bg-blue-50", icon: ShoppingBag },
     pending_payment: { label: "Chờ thanh toán", color: "text-amber-600", bg: "bg-amber-50", icon: CreditCard },
     processing: { label: "Đang xử lý", color: "text-yellow-600", bg: "bg-yellow-50", icon: Clock },
+    paid: { label: "Thanh toán thành công", color: "text-teal-600", bg: "bg-teal-50", icon: CreditCard },
     delivering: { label: "Đang giao", color: "text-purple-600", bg: "bg-purple-50", icon: Truck },
     completed: { label: "Hoàn thành", color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckCircle2 },
     cancelled: { label: "Đã hủy", color: "text-red-600", bg: "bg-red-50", icon: XCircle },

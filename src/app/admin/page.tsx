@@ -68,6 +68,7 @@ export default function AdminDashboard() {
         new: { label: "Mới", color: "bg-blue-500/20 text-blue-400" },
         pending_payment: { label: "Chờ thanh toán", color: "bg-amber-500/20 text-amber-400" },
         processing: { label: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400" },
+        paid: { label: "Thanh toán thành công", color: "bg-teal-500/20 text-teal-400" },
         delivering: { label: "Đang giao", color: "bg-purple-500/20 text-purple-400" },
         completed: { label: "Hoàn thành", color: "bg-emerald-500/20 text-emerald-400" },
         cancelled: { label: "Đã hủy", color: "bg-red-500/20 text-red-400" },

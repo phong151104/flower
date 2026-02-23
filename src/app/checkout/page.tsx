@@ -198,9 +198,25 @@ export default function CheckoutPage() {
                 userId: user?.id,
             });
 
+            // Store order info for success page
+            sessionStorage.setItem(
+                "lastOrder",
+                JSON.stringify({
+                    paymentMethod: "bank",
+                    totalPrice: totalPrice + SHIPPING_FEE,
+                    customerName: customerName.trim(),
+                    items: items.map((item) => ({
+                        name: item.name,
+                        image: item.image,
+                        price: item.price,
+                        size: item.size,
+                        quantity: item.quantity,
+                    })),
+                })
+            );
+
             clearCart();
-            setBankTransferConfirmed(true);
-            setCurrentStep(3);
+            router.push("/checkout/success");
         } catch (err) {
             console.error(err);
         } finally {
@@ -238,6 +254,13 @@ export default function CheckoutPage() {
                     paymentMethod,
                     totalPrice: totalPrice + SHIPPING_FEE,
                     customerName: customerName.trim(),
+                    items: items.map((item) => ({
+                        name: item.name,
+                        image: item.image,
+                        price: item.price,
+                        size: item.size,
+                        quantity: item.quantity,
+                    })),
                 })
             );
 
@@ -716,7 +739,7 @@ export default function CheckoutPage() {
                                                             </div>
                                                         </div>
                                                         <p className="text-xs text-blue-500 mt-3 text-center">
-                                                            * Mở app ngân hàng → Quét QR → Tự điền số tiền + tài khoản
+                                                            * Mở app ngân hàng → Quét QR → Số tiền và tài khoản sẽ được tự động điền
                                                         </p>
                                                     </div>
                                                 </motion.div>

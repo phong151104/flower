@@ -56,7 +56,7 @@ const socials = [
     {
         name: "Facebook",
         handle: "Bloomella Vietnam",
-        url: "https://facebook.com/bloomella",
+        url: "https://www.facebook.com/bloomella102",
         desc: "Cập nhật mẫu hoa mới, chương trình khuyến mãi",
         icon: (
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
@@ -82,13 +82,28 @@ const socials = [
         textColor: "text-pink-600",
     },
     {
+        name: "TikTok",
+        handle: "@bloomella.102",
+        url: "https://www.tiktok.com/@bloomella.102",
+        desc: "Video hoa đẹp, tips cắm hoa, behind the scenes",
+        icon: (
+            <svg viewBox="0 0 448 512" fill="currentColor" className="w-6 h-6">
+                <path d="M448 209.9a210.1 210.1 0 01-122.8-39.3v178.8A162.6 162.6 0 11185 188.3v89.9a74.6 74.6 0 1052.2 71.2V0h88a121 121 0 00122.8 121.3z" />
+            </svg>
+        ),
+        gradient: "from-gray-800 to-black",
+        hoverBg: "hover:bg-gray-50",
+        textColor: "text-gray-800",
+    },
+    {
         name: "Zalo",
         handle: "Bloomella Shop",
-        url: "https://zalo.me/bloomella",
+        url: "https://zalo.me/0342081925",
         desc: "Chat tư vấn nhanh, đặt hoa trực tiếp",
         icon: (
-            <svg viewBox="0 0 48 48" fill="currentColor" className="w-6 h-6">
-                <path d="M12.5 6C9.46 6 7 8.46 7 11.5v25C7 39.54 9.46 42 12.5 42h23c3.04 0 5.5-2.46 5.5-5.5v-25C41 8.46 38.54 6 35.5 6h-23zm.31 8h22.38c.21 0 .31.15.2.33l-8.55 14.7h7.04c.34 0 .5.42.26.65l-12.85 12.3c-.19.18-.5.02-.45-.23l1.83-9.26H15.4a.24.24 0 01-.22-.35L12.62 14.3c-.07-.15.03-.3.19-.3z" />
+            <svg viewBox="0 0 48 48" className="w-6 h-6">
+                <path d="M24 2C11.85 2 2 10.95 2 22c0 5.2 2.15 9.95 5.7 13.55L5.5 44l9.15-4.8C17.4 40.35 20.6 41 24 41c12.15 0 22-8.5 22-19S36.15 2 24 2z" fill="currentColor" />
+                <text x="24" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">Zalo</text>
             </svg>
         ),
         gradient: "from-blue-400 to-blue-500",
@@ -248,37 +263,7 @@ export default function ContactPage() {
                                 </div>
                             </motion.div>
 
-                            {/* Quick Zalo CTA */}
-                            <motion.div
-                                {...fadeIn}
-                                className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white"
-                            >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-                                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-6 -translate-x-6" />
-                                <div className="relative">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <MessageCircle size={24} />
-                                        <h3 className="font-display text-lg font-bold">
-                                            Chat ngay qua Zalo
-                                        </h3>
-                                    </div>
-                                    <p className="text-blue-100 text-sm mb-4">
-                                        Tư vấn miễn phí, phản hồi siêu nhanh. Gửi ảnh mẫu hoa bạn thích —
-                                        chúng tôi sẽ làm theo ý bạn!
-                                    </p>
-                                    <a
-                                        href="https://zalo.me/bloomella"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-blue-600 rounded-full font-semibold text-sm hover:bg-blue-50 transition-colors duration-300"
-                                    >
-                                        Nhắn tin Zalo
-                                        <Send size={14} />
-                                    </a>
-                                </div>
-                            </motion.div>
-
-                            {/* Map placeholder */}
+                            {/* Map */}
                             <motion.div
                                 {...fadeIn}
                                 className="rounded-2xl overflow-hidden shadow-card h-52"
@@ -444,7 +429,7 @@ export default function ContactPage() {
                         {[
                             {
                                 q: "Bloomella có giao hoa tận nơi không?",
-                                a: "Có! Chúng tôi giao hoa trong vòng 2 giờ nội thành HCM. Đối với các tỉnh khác, thời gian giao hàng từ 1-3 ngày làm việc.",
+                                a: "Có! Chúng tôi giao hoa trong vòng 2 giờ nội thành Hà Nội. Đối với các quận huyện ngoại thành và tỉnh lân cận, thời gian giao hàng từ 3-5 giờ.",
                             },
                             {
                                 q: "Tôi có thể đặt hoa theo mẫu riêng không?",

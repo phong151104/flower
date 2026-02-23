@@ -3,15 +3,16 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, ChevronDown } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-import { formatPrice } from "@/data/products";
+import { formatPrice, products } from "@/data/products";
 
 export default function CartDrawer() {
     const {
         items,
         removeFromCart,
         updateQuantity,
+        updateSize,
         clearCart,
         totalItems,
         totalPrice,
@@ -98,9 +99,41 @@ export default function CartDrawer() {
                                                 <h3 className="font-semibold text-gray-800 text-sm line-clamp-1">
                                                     {item.name}
                                                 </h3>
-                                                <p className="text-xs text-gray-400 mt-0.5">
-                                                    {item.size}
-                                                </p>
+
+                                                {/* Size selector */}
+                                                {(() => {
+                                                    const product = products.find(p => p.id === item.productId);
+                                                    if (product && product.sizes.length > 1) {
+                                                        return (
+                                                            <div className="relative mt-1">
+                                                                <select
+                                                                    value={item.size}
+                                                                    onChange={(e) => {
+                                                                        const newSize = e.target.value;
+                                                                        const sizeInfo = product.sizes.find(s => s.name === newSize);
+                                                                        if (sizeInfo) {
+                                                                            updateSize(item.productId, item.size, newSize, sizeInfo.price);
+                                                                        }
+                                                                    }}
+                                                                    className="w-full text-xs py-1.5 pl-2 pr-7 rounded-lg border border-cream-200 bg-white text-gray-600 focus:border-primary-300 focus:outline-none appearance-none cursor-pointer hover:border-primary-200 transition-colors"
+                                                                >
+                                                                    {product.sizes.map((s) => (
+                                                                        <option key={s.name} value={s.name}>
+                                                                            {s.name} - {formatPrice(s.price)}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <p className="text-xs text-gray-400 mt-0.5">
+                                                            {item.size}
+                                                        </p>
+                                                    );
+                                                })()}
+
                                                 <p className="text-primary-500 font-bold text-sm mt-1">
                                                     {formatPrice(item.price)}
                                                 </p>

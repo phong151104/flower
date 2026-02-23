@@ -142,7 +142,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                 {/* Price */}
                 <div className="flex items-center gap-2 mt-2">
                     <span className="text-primary-500 font-bold text-lg">
-                        {formatPrice(product.price)}
+                        {formatPrice(product.sizes[0]?.price || product.price)}
                     </span>
                     {product.originalPrice && (
                         <span className="text-gray-400 line-through text-sm">

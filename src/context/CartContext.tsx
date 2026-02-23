@@ -16,6 +16,7 @@ interface CartContextType {
     addToCart: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
     removeFromCart: (productId: string, size: string) => void;
     updateQuantity: (productId: string, size: string, quantity: number) => void;
+    updateSize: (productId: string, oldSize: string, newSize: string, newPrice: number) => void;
     clearCart: () => void;
     totalItems: number;
     totalPrice: number;
@@ -71,6 +72,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const clearCart = useCallback(() => setItems([]), []);
 
+    const updateSize = useCallback(
+        (productId: string, oldSize: string, newSize: string, newPrice: number) => {
+            if (oldSize === newSize) return;
+            setItems((prev) => {
+                const existing = prev.find(
+                    (i) => i.productId === productId && i.size === newSize
+                );
+                const current = prev.find(
+                    (i) => i.productId === productId && i.size === oldSize
+                );
+                if (!current) return prev;
+
+                if (existing) {
+                    // Merge into existing item with same size
+                    return prev
+                        .map((i) =>
+                            i.productId === productId && i.size === newSize
+                                ? { ...i, quantity: i.quantity + current.quantity }
+                                : i
+                        )
+                        .filter(
+                            (i) => !(i.productId === productId && i.size === oldSize)
+                        );
+                }
+                return prev.map((i) =>
+                    i.productId === productId && i.size === oldSize
+                        ? { ...i, size: newSize, price: newPrice }
+                        : i
+                );
+            });
+        },
+        []
+    );
+
     const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
     const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
@@ -81,6 +116,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 addToCart,
                 removeFromCart,
                 updateQuantity,
+                updateSize,
                 clearCart,
                 totalItems,
                 totalPrice,

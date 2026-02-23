@@ -33,18 +33,45 @@ export default function Footer() {
                         </p>
                         <div className="flex gap-4">
                             <a
-                                href="#"
+                                href="https://www.facebook.com/bloomella102"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center
                          transition-all duration-300 hover:-translate-y-1"
                             >
                                 <Facebook size={18} />
                             </a>
                             <a
-                                href="#"
+                                href="https://www.facebook.com/bloomella102"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center
                          transition-all duration-300 hover:-translate-y-1"
                             >
                                 <Instagram size={18} />
+                            </a>
+                            <a
+                                href="https://www.tiktok.com/@bloomella.102"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center
+                         transition-all duration-300 hover:-translate-y-1"
+                            >
+                                <svg viewBox="0 0 448 512" fill="currentColor" className="w-[16px] h-[16px]">
+                                    <path d="M448 209.9a210.1 210.1 0 01-122.8-39.3v178.8A162.6 162.6 0 11185 188.3v89.9a74.6 74.6 0 1052.2 71.2V0h88a121 121 0 00122.8 121.3z" />
+                                </svg>
+                            </a>
+                            <a
+                                href="https://zalo.me/0342081925"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center
+                         transition-all duration-300 hover:-translate-y-1"
+                            >
+                                <svg viewBox="0 0 48 48" className="w-[18px] h-[18px]">
+                                    <path d="M24 2C11.85 2 2 10.95 2 22c0 5.2 2.15 9.95 5.7 13.55L5.5 44l9.15-4.8C17.4 40.35 20.6 41 24 41c12.15 0 22-8.5 22-19S36.15 2 24 2z" fill="currentColor" />
+                                    <text x="24" y="26" textAnchor="middle" fill="#1f2937" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">Z</text>
+                                </svg>
                             </a>
                         </div>
                     </div>

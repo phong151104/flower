@@ -33,7 +33,7 @@ export interface Order {
     customerNote?: string;
     paymentMethod?: "cod" | "bank";
     userId?: string;
-    status: "new" | "pending_payment" | "processing" | "delivering" | "completed" | "cancelled";
+    status: "new" | "pending_payment" | "processing" | "paid" | "delivering" | "completed" | "cancelled";
     createdAt: string;
     updatedAt: string;
 }
@@ -137,6 +137,7 @@ function dbToOrder(row: Record<string, unknown>): Order {
         customerPhone: (row.customer_phone as string) || "",
         customerAddress: (row.customer_address as string) || "",
         customerNote: (row.customer_note as string) || undefined,
+        paymentMethod: (row.payment_method as "cod" | "bank") || undefined,
         userId: (row.user_id as string) || undefined,
         status: row.status as Order["status"],
         createdAt: row.created_at as string,
@@ -201,6 +202,48 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         loadData();
     }, [loadData]);
+
+    // Realtime subscription for orders
+    useEffect(() => {
+        if (!supabase) return;
+
+        const channel = supabase
+            .channel("orders-realtime")
+            .on(
+                "postgres_changes",
+                { event: "UPDATE", schema: "public", table: "orders" },
+                (payload) => {
+                    const updated = dbToOrder(payload.new as Record<string, unknown>);
+                    setOrders((prev) =>
+                        prev.map((o) => (o.id === updated.id ? updated : o))
+                    );
+                }
+            )
+            .on(
+                "postgres_changes",
+                { event: "INSERT", schema: "public", table: "orders" },
+                (payload) => {
+                    const newOrder = dbToOrder(payload.new as Record<string, unknown>);
+                    setOrders((prev) => {
+                        if (prev.some((o) => o.id === newOrder.id)) return prev;
+                        return [newOrder, ...prev];
+                    });
+                }
+            )
+            .on(
+                "postgres_changes",
+                { event: "DELETE", schema: "public", table: "orders" },
+                (payload) => {
+                    const deletedId = (payload.old as Record<string, unknown>).id as string;
+                    setOrders((prev) => prev.filter((o) => o.id !== deletedId));
+                }
+            )
+            .subscribe();
+
+        return () => {
+            if (supabase) supabase.removeChannel(channel);
+        };
+    }, []);
 
     // ---- Products ----
     const addProduct = useCallback(
@@ -296,7 +339,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
             if (dbReady && supabase) {
                 // Map pending_payment to "new" for DB (column constraint)
                 const dbStatus = newOrder.status === "pending_payment" ? "new" : newOrder.status;
-                await supabase.from("orders").insert({
+                const insertData: Record<string, unknown> = {
                     id: newOrder.id,
                     items: newOrder.items,
                     total_price: newOrder.totalPrice,
@@ -304,9 +347,27 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                     customer_phone: newOrder.customerPhone,
                     customer_address: newOrder.customerAddress,
                     customer_note: newOrder.customerNote || null,
-                    user_id: newOrder.userId || null,
+                    payment_method: newOrder.paymentMethod || null,
                     status: dbStatus,
-                });
+                };
+
+                // Try with user_id first, fallback without it if table doesn't have the column
+                if (newOrder.userId) {
+                    insertData.user_id = newOrder.userId;
+                }
+
+                const { error } = await supabase.from("orders").insert(insertData);
+                if (error) {
+                    console.error("Order insert failed:", error.message);
+                    // Retry without user_id in case the column doesn't exist
+                    if (error.message.includes("user_id")) {
+                        delete insertData.user_id;
+                        const { error: retryError } = await supabase.from("orders").insert(insertData);
+                        if (retryError) {
+                            console.error("Order insert retry failed:", retryError.message);
+                        }
+                    }
+                }
             }
         },
         [dbReady]
@@ -324,10 +385,13 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 )
             );
             if (dbReady && supabase) {
-                await supabase
+                const { error } = await supabase
                     .from("orders")
                     .update({ status, updated_at: now })
                     .eq("id", id);
+                if (error) {
+                    console.error("Order status update failed:", error.message);
+                }
             }
 
             const txPrefix = `Đơn hàng #${id.slice(0, 8).toUpperCase()}`;
