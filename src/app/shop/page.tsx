@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, LayoutGrid, List, Sparkles, ShoppingBag } from "lucide-react";
@@ -14,6 +14,14 @@ import { useAdmin } from "@/context/AdminContext";
 type TabType = "catalog" | "custom";
 
 export default function ShopPage() {
+    return (
+        <Suspense>
+            <ShopContent />
+        </Suspense>
+    );
+}
+
+function ShopContent() {
     const { products } = useAdmin();
     const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = useState<TabType>("catalog");
