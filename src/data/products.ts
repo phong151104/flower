@@ -17,13 +17,13 @@ export interface Product {
     inStock: boolean;
 }
 
-export const categories = [
-    { id: "all", name: "Tất cả", count: 16 },
-    { id: "bouquet", name: "Bó hoa", count: 6 },
-    { id: "basket", name: "Giỏ hoa", count: 3 },
-    { id: "box", name: "Hộp hoa", count: 3 },
-    { id: "wedding", name: "Hoa cưới", count: 2 },
-    { id: "dried", name: "Hoa khô", count: 2 },
+const categoryDefs = [
+    { id: "all", name: "Tất cả" },
+    { id: "bouquet", name: "Bó hoa" },
+    { id: "basket", name: "Giỏ hoa" },
+    { id: "box", name: "Hộp hoa" },
+    { id: "wedding", name: "Hoa cưới" },
+    { id: "dried", name: "Hoa khô" },
 ];
 
 export const occasions = [
@@ -344,3 +344,11 @@ export const products: Product[] = [
 export function formatPrice(price: number): string {
     return new Intl.NumberFormat("vi-VN").format(price) + "₫";
 }
+
+export const categories = categoryDefs.map((cat) => ({
+    ...cat,
+    count:
+        cat.id === "all"
+            ? products.length
+            : products.filter((p) => p.category === cat.id).length,
+}));

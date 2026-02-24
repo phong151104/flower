@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAdmin, Transaction } from "@/context/AdminContext";
-import { Plus, Trash2, TrendingUp, TrendingDown, Wallet, ChevronDown } from "lucide-react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Wallet, ChevronDown, Pencil, Check, X } from "lucide-react";
 
 const expenseCategories = [
     "Nhập hoa",
@@ -24,12 +24,20 @@ const incomeCategories = [
 ];
 
 export default function AdminFinance() {
-    const { transactions, addTransaction, deleteTransaction, totalIncome, totalExpense, profit } =
+    const { transactions, addTransaction, updateTransaction, deleteTransaction, totalIncome, totalExpense, profit } =
         useAdmin();
 
     const [showForm, setShowForm] = useState(false);
     const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
     const [filterMonth, setFilterMonth] = useState("");
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editForm, setEditForm] = useState<{
+        type: "income" | "expense";
+        amount: string;
+        description: string;
+        category: string;
+        date: string;
+    } | null>(null);
     const [form, setForm] = useState({
         type: "income" as "income" | "expense",
         amount: "",
@@ -63,6 +71,35 @@ export default function AdminFinance() {
         setShowForm(false);
     };
 
+    const startEdit = (tx: Transaction) => {
+        setEditingId(tx.id);
+        setEditForm({
+            type: tx.type,
+            amount: tx.amount.toString(),
+            description: tx.description,
+            category: tx.category,
+            date: tx.date,
+        });
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditForm(null);
+    };
+
+    const saveEdit = () => {
+        if (!editingId || !editForm || !editForm.amount || !editForm.description) return;
+        updateTransaction(editingId, {
+            type: editForm.type,
+            amount: parseInt(editForm.amount),
+            description: editForm.description,
+            category: editForm.category,
+            date: editForm.date,
+        });
+        setEditingId(null);
+        setEditForm(null);
+    };
+
     const filtered = transactions.filter((tx) => {
         const matchType = filterType === "all" || tx.type === filterType;
         const matchMonth = !filterMonth || tx.date.startsWith(filterMonth);
@@ -78,6 +115,9 @@ export default function AdminFinance() {
 
     const inputClass =
         "w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-pink-500 transition-colors";
+
+    const editInputClass =
+        "px-2 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm focus:outline-none focus:border-pink-500 transition-colors";
 
     return (
         <div className="space-y-6">
@@ -145,8 +185,8 @@ export default function AdminFinance() {
                                 type="button"
                                 onClick={() => setForm({ ...form, type: "income", category: "" })}
                                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${form.type === "income"
-                                        ? "bg-emerald-500 text-white"
-                                        : "bg-gray-800 text-gray-400"
+                                    ? "bg-emerald-500 text-white"
+                                    : "bg-gray-800 text-gray-400"
                                     }`}
                             >
                                 Thu nhập
@@ -155,8 +195,8 @@ export default function AdminFinance() {
                                 type="button"
                                 onClick={() => setForm({ ...form, type: "expense", category: "" })}
                                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${form.type === "expense"
-                                        ? "bg-red-500 text-white"
-                                        : "bg-gray-800 text-gray-400"
+                                    ? "bg-red-500 text-white"
+                                    : "bg-gray-800 text-gray-400"
                                     }`}
                             >
                                 Chi phí
@@ -291,53 +331,155 @@ export default function AdminFinance() {
                                 <th className="py-3 px-4 font-medium">Danh mục</th>
                                 <th className="py-3 px-4 font-medium">Loại</th>
                                 <th className="py-3 px-4 font-medium text-right">Số tiền</th>
-                                <th className="py-3 px-4 font-medium text-right">Xóa</th>
+                                <th className="py-3 px-4 font-medium text-right">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.map((tx) => (
-                                <tr
-                                    key={tx.id}
-                                    className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
-                                >
-                                    <td className="py-3 px-4 text-gray-400">
-                                        {new Date(tx.date).toLocaleDateString("vi-VN")}
-                                    </td>
-                                    <td className="py-3 px-4 font-medium">
-                                        {tx.description}
-                                    </td>
-                                    <td className="py-3 px-4 text-gray-400">
-                                        {tx.category}
-                                    </td>
-                                    <td className="py-3 px-4">
-                                        <span
-                                            className={`text-xs px-2.5 py-1 rounded-full font-medium ${tx.type === "income"
+                            {filtered.map((tx) =>
+                                editingId === tx.id && editForm ? (
+                                    <tr
+                                        key={tx.id}
+                                        className="border-b border-gray-800/50 bg-gray-800/40"
+                                    >
+                                        <td className="py-2 px-4">
+                                            <input
+                                                type="date"
+                                                value={editForm.date}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, date: e.target.value })
+                                                }
+                                                className={editInputClass + " w-[130px]"}
+                                            />
+                                        </td>
+                                        <td className="py-2 px-4">
+                                            <input
+                                                type="text"
+                                                value={editForm.description}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, description: e.target.value })
+                                                }
+                                                className={editInputClass + " w-full min-w-[150px]"}
+                                            />
+                                        </td>
+                                        <td className="py-2 px-4">
+                                            <select
+                                                value={editForm.category}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, category: e.target.value })
+                                                }
+                                                className={editInputClass + " w-[140px]"}
+                                            >
+                                                {(editForm.type === "income"
+                                                    ? incomeCategories
+                                                    : expenseCategories
+                                                ).map((c) => (
+                                                    <option key={c} value={c}>
+                                                        {c}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td className="py-2 px-4">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        type: editForm.type === "income" ? "expense" : "income",
+                                                        category: "",
+                                                    })
+                                                }
+                                                className={`text-xs px-2.5 py-1 rounded-full font-medium cursor-pointer ${editForm.type === "income"
                                                     ? "bg-emerald-500/20 text-emerald-400"
                                                     : "bg-red-500/20 text-red-400"
-                                                }`}
-                                        >
-                                            {tx.type === "income" ? "Thu" : "Chi"}
-                                        </span>
-                                    </td>
-                                    <td
-                                        className={`py-3 px-4 text-right font-semibold ${tx.type === "income"
+                                                    }`}
+                                            >
+                                                {editForm.type === "income" ? "Thu" : "Chi"}
+                                            </button>
+                                        </td>
+                                        <td className="py-2 px-4 text-right">
+                                            <input
+                                                type="number"
+                                                value={editForm.amount}
+                                                onChange={(e) =>
+                                                    setEditForm({ ...editForm, amount: e.target.value })
+                                                }
+                                                className={editInputClass + " w-[120px] text-right"}
+                                            />
+                                        </td>
+                                        <td className="py-2 px-4 text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <button
+                                                    onClick={saveEdit}
+                                                    className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                                                    title="Lưu"
+                                                >
+                                                    <Check size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={cancelEdit}
+                                                    className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                                                    title="Hủy"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    <tr
+                                        key={tx.id}
+                                        className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                                    >
+                                        <td className="py-3 px-4 text-gray-400">
+                                            {new Date(tx.date).toLocaleDateString("vi-VN")}
+                                        </td>
+                                        <td className="py-3 px-4 font-medium">
+                                            {tx.description}
+                                        </td>
+                                        <td className="py-3 px-4 text-gray-400">
+                                            {tx.category}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <span
+                                                className={`text-xs px-2.5 py-1 rounded-full font-medium ${tx.type === "income"
+                                                    ? "bg-emerald-500/20 text-emerald-400"
+                                                    : "bg-red-500/20 text-red-400"
+                                                    }`}
+                                            >
+                                                {tx.type === "income" ? "Thu" : "Chi"}
+                                            </span>
+                                        </td>
+                                        <td
+                                            className={`py-3 px-4 text-right font-semibold ${tx.type === "income"
                                                 ? "text-emerald-400"
                                                 : "text-red-400"
-                                            }`}
-                                    >
-                                        {tx.type === "income" ? "+" : "-"}
-                                        {formatCurrency(tx.amount)}
-                                    </td>
-                                    <td className="py-3 px-4 text-right">
-                                        <button
-                                            onClick={() => deleteTransaction(tx.id)}
-                                            className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                }`}
                                         >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                            {tx.type === "income" ? "+" : "-"}
+                                            {formatCurrency(tx.amount)}
+                                        </td>
+                                        <td className="py-3 px-4 text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <button
+                                                    onClick={() => startEdit(tx)}
+                                                    className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                    title="Sửa"
+                                                >
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteTransaction(tx.id)}
+                                                    className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                    title="Xóa"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            )}
                         </tbody>
                     </table>
                 </div>

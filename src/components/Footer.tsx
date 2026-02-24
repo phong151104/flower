@@ -108,16 +108,18 @@ export default function Footer() {
                         </h3>
                         <ul className="space-y-3">
                             {[
-                                "Hoa cưới",
-                                "Hoa sinh nhật",
-                                "Hoa khai trương",
-                                "Hoa chia buồn",
-                                "Hoa trang trí sự kiện",
+                                { name: "Hoa cưới", href: "/shop?category=wedding" },
+                                { name: "Hoa sinh nhật", href: "/shop?occasion=Sinh nhật" },
+                                { name: "Hoa khai trương", href: "/shop?occasion=Khai trương" },
+                                { name: "Hoa ngày lễ", href: "/shop?occasion=Ngày lễ" },
                             ].map((service) => (
-                                <li key={service}>
-                                    <span className="text-gray-400 hover:text-primary-400 transition-colors duration-300 cursor-pointer hover:pl-2 block">
-                                        {service}
-                                    </span>
+                                <li key={service.name}>
+                                    <Link
+                                        href={service.href}
+                                        className="text-gray-400 hover:text-primary-400 transition-colors duration-300 hover:pl-2 block"
+                                    >
+                                        {service.name}
+                                    </Link>
                                 </li>
                             ))}
                         </ul>

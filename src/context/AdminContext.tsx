@@ -49,6 +49,7 @@ interface AdminContextType {
     // Transactions
     transactions: Transaction[];
     addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
+    updateTransaction: (id: string, updates: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
     deleteTransaction: (id: string) => void;
     totalIncome: number;
     totalExpense: number;
@@ -306,6 +307,24 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         [dbReady]
     );
 
+    const updateTransaction = useCallback(
+        async (id: string, updates: Partial<Omit<Transaction, "id" | "createdAt">>) => {
+            setTransactions((prev) =>
+                prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+            );
+            if (dbReady && supabase) {
+                const dbUpdates: Record<string, unknown> = {};
+                if (updates.type !== undefined) dbUpdates.type = updates.type;
+                if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+                if (updates.description !== undefined) dbUpdates.description = updates.description;
+                if (updates.category !== undefined) dbUpdates.category = updates.category;
+                if (updates.date !== undefined) dbUpdates.date = updates.date;
+                await supabase.from("transactions").update(dbUpdates).eq("id", id);
+            }
+        },
+        [dbReady]
+    );
+
     const deleteTransaction = useCallback(
         async (id: string) => {
             setTransactions((prev) => prev.filter((t) => t.id !== id));
@@ -445,6 +464,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 getProduct,
                 transactions,
                 addTransaction,
+                updateTransaction,
                 deleteTransaction,
                 totalIncome,
                 totalExpense,

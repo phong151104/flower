@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, LayoutGrid, List, Sparkles, ShoppingBag } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -14,6 +15,7 @@ type TabType = "catalog" | "custom";
 
 export default function ShopPage() {
     const { products } = useAdmin();
+    const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = useState<TabType>("catalog");
     const [filterOpen, setFilterOpen] = useState(false);
     const [filters, setFilters] = useState({
@@ -23,6 +25,19 @@ export default function ShopPage() {
         colors: [] as string[],
         sortBy: "popular",
     });
+
+    // Read URL params and apply as initial filters
+    useEffect(() => {
+        const category = searchParams.get("category");
+        const occasion = searchParams.get("occasion");
+        if (category || occasion) {
+            setFilters((prev) => ({
+                ...prev,
+                category: category || "all",
+                occasions: occasion ? [occasion] : [],
+            }));
+        }
+    }, [searchParams]);
 
     const filteredProducts = useMemo(() => {
         let result = [...products];

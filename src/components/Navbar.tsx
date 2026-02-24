@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
+import { isSuperAdmin } from "@/config/admin";
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -137,6 +138,16 @@ export default function Navbar() {
                                             <Package size={16} />
                                             Đơn hàng của tôi
                                         </Link>
+                                        {isSuperAdmin(user.email) && (
+                                            <Link
+                                                href="/admin"
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-pink-500 hover:bg-pink-50 transition-colors font-medium"
+                                            >
+                                                <span>👑</span>
+                                                Quản lý Admin
+                                            </Link>
+                                        )}
                                     </div>
                                     <div className="border-t border-cream-100 py-1">
                                         <button
