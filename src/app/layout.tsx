@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
+import MessengerChat from "@/components/MessengerChat";
+
 export const metadata: Metadata = {
     title: "Bloomella - Beautiful Flower Bouquets & Arrangements",
     description:
@@ -25,6 +27,7 @@ export default function RootLayout({
         <html lang="vi">
             <body className="min-h-screen">
                 <Providers>{children}</Providers>
+                <MessengerChat />
             </body>
         </html>
     );
