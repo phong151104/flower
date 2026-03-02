@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useAdmin, ManualOrder } from "@/context/AdminContext";
-import { supabase } from "@/lib/supabase";
 import {
     Plus,
     Trash2,
@@ -97,6 +96,7 @@ export default function ManualOrdersPage() {
     const [depositAmount, setDepositAmount] = useState("");
     const [images, setImages] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [lightboxImg, setLightboxImg] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const formatCurrency = (n: number) =>
@@ -231,23 +231,63 @@ export default function ManualOrdersPage() {
         setDeleteConfirm(null);
     };
 
-    const handleImageUpload = async (files: FileList | null) => {
-        if (!files || !supabase) return;
+    const compressImage = (file: File | Blob): Promise<string> => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    const MAX = 800;
+                    let w = img.width, h = img.height;
+                    if (w > MAX || h > MAX) {
+                        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                        else { w = Math.round(w * MAX / h); h = MAX; }
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL("image/jpeg", 0.7));
+                };
+                img.src = e.target?.result as string;
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const processFiles = async (files: File[] | Blob[]) => {
         setUploading(true);
         const newUrls: string[] = [];
-        for (const file of Array.from(files)) {
-            if (!file.type.startsWith("image/")) continue;
-            const ext = file.name.split(".").pop();
-            const fileName = `orders/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-            const { error } = await supabase.storage.from("order-images").upload(fileName, file);
-            if (!error) {
-                const { data: urlData } = supabase.storage.from("order-images").getPublicUrl(fileName);
-                if (urlData?.publicUrl) newUrls.push(urlData.publicUrl);
-            }
+        for (const file of files) {
+            const dataUrl = await compressImage(file as File);
+            newUrls.push(dataUrl);
         }
         setImages((prev) => [...prev, ...newUrls]);
         setUploading(false);
+    };
+
+    const handleImageUpload = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        const imageFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
+        if (imageFiles.length === 0) return;
+        await processFiles(imageFiles);
         if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const handlePaste = async (e: React.ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        const imageFiles: File[] = [];
+        for (const item of Array.from(items)) {
+            if (item.type.startsWith("image/")) {
+                const file = item.getAsFile();
+                if (file) imageFiles.push(file);
+            }
+        }
+        if (imageFiles.length > 0) {
+            e.preventDefault();
+            await processFiles(imageFiles);
+        }
     };
 
     const removeImage = (url: string) => {
@@ -519,7 +559,7 @@ export default function ManualOrdersPage() {
             {showForm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60" onClick={() => { setShowForm(false); resetForm(); }} />
-                    <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-auto">
+                    <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-auto" onPaste={handlePaste}>
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="font-semibold text-lg">{editingId ? "Sửa đơn hàng" : "Tạo đơn mới"}</h2>
                             <button onClick={() => { setShowForm(false); resetForm(); }} className="p-1.5 text-gray-400 hover:text-white rounded-lg"><X size={18} /></button>
@@ -610,8 +650,8 @@ export default function ManualOrdersPage() {
                                 <div className="flex flex-wrap gap-2 mt-1.5">
                                     {images.map((url, i) => (
                                         <div key={i} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-gray-700">
-                                            <img src={url} alt="" className="w-full h-full object-cover" />
-                                            <button type="button" onClick={() => removeImage(url)}
+                                            <img src={url} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => setLightboxImg(url)} />
+                                            <button type="button" onClick={(e) => { e.stopPropagation(); removeImage(url); }}
                                                 className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <X size={10} />
                                             </button>
@@ -622,6 +662,7 @@ export default function ManualOrdersPage() {
                                         {uploading ? <Loader2 size={20} className="animate-spin" /> : <><ImagePlus size={20} /><span className="text-[10px] mt-1">Thêm ảnh</span></>}
                                     </button>
                                 </div>
+                                <p className="text-[10px] text-gray-500 mt-1.5">💡 Ctrl+V để dán ảnh từ clipboard</p>
                             </div>
                             <button onClick={handleSubmit} disabled={!customerName.trim() || !amount.trim()}
                                 className="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
@@ -699,16 +740,26 @@ export default function ManualOrdersPage() {
                                     <p className="text-xs text-gray-400 mb-2">Ảnh đính kèm</p>
                                     <div className="flex flex-wrap gap-2">
                                         {viewingOrder.images.map((url, i) => (
-                                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                                            <button key={i} onClick={() => setLightboxImg(url)}
                                                 className="w-24 h-24 rounded-xl overflow-hidden border border-gray-700 hover:border-pink-500 transition-colors block">
                                                 <img src={url} alt="" className="w-full h-full object-cover" />
-                                            </a>
+                                            </button>
                                         ))}
                                     </div>
                                 </div>
                             )}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Lightbox */}
+            {lightboxImg && (
+                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setLightboxImg(null)}>
+                    <button className="absolute top-4 right-4 w-10 h-10 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center transition-colors z-10">
+                        <X size={20} />
+                    </button>
+                    <img src={lightboxImg} alt="" className="max-w-full max-h-full object-contain rounded-xl" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}
         </div>
