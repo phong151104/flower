@@ -167,7 +167,12 @@ export default function ManualOrdersPage() {
                 amount: orderAmount, source, note: note.trim(), orderDate, deliveryDate,
                 status, paymentStatus, depositAmount: paymentStatus === "deposit" ? deposit : 0,
             });
-            if (prevOrder && prevOrder.paymentStatus !== paymentStatus) {
+            // Recreate linked transactions if amount, deposit, or payment status changed
+            if (prevOrder && (
+                prevOrder.paymentStatus !== paymentStatus ||
+                prevOrder.amount !== orderAmount ||
+                prevOrder.depositAmount !== (paymentStatus === "deposit" ? deposit : 0)
+            )) {
                 await removeLinkedTx(editingId);
                 await createPaymentTx(editingId, paymentStatus, orderAmount, deposit, customerName.trim());
             }
