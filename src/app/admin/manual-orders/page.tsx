@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useAdmin, ManualOrder } from "@/context/AdminContext";
+import { supabase } from "@/lib/supabase";
 import {
     Plus,
     Trash2,
@@ -23,6 +24,8 @@ import {
     ChevronRight,
     List,
     CalendarDays,
+    ImagePlus,
+    Loader2,
 } from "lucide-react";
 
 const sourceOptions = [
@@ -92,6 +95,9 @@ export default function ManualOrdersPage() {
     const [status, setStatus] = useState<ManualOrder["status"]>("pending");
     const [paymentStatus, setPaymentStatus] = useState<ManualOrder["paymentStatus"]>("unpaid");
     const [depositAmount, setDepositAmount] = useState("");
+    const [images, setImages] = useState<string[]>([]);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const formatCurrency = (n: number) =>
         new Intl.NumberFormat("vi-VN").format(n) + "₫";
@@ -111,6 +117,7 @@ export default function ManualOrdersPage() {
         setStatus("pending");
         setPaymentStatus("unpaid");
         setDepositAmount("");
+        setImages([]);
         setEditingId(null);
     };
 
@@ -127,6 +134,7 @@ export default function ManualOrdersPage() {
         setStatus(order.status);
         setPaymentStatus(order.paymentStatus);
         setDepositAmount(order.depositAmount > 0 ? order.depositAmount.toString() : "");
+        setImages(order.images || []);
         setEditingId(order.id);
         setShowForm(true);
     };
@@ -166,6 +174,7 @@ export default function ManualOrdersPage() {
                 customerAddress: customerAddress.trim(), description: description.trim(),
                 amount: orderAmount, source, note: note.trim(), orderDate, deliveryDate,
                 status, paymentStatus, depositAmount: paymentStatus === "deposit" ? deposit : 0,
+                images,
             });
             // Recreate linked transactions if amount, deposit, or payment status changed
             if (prevOrder && (
@@ -182,6 +191,7 @@ export default function ManualOrdersPage() {
                 customerAddress: customerAddress.trim(), description: description.trim(),
                 amount: orderAmount, source, note: note.trim(), orderDate, deliveryDate,
                 status, paymentStatus, depositAmount: paymentStatus === "deposit" ? deposit : 0,
+                images,
             });
             if (paymentStatus === "paid" || (paymentStatus === "deposit" && deposit > 0)) {
                 const newest = orders[0];
@@ -219,6 +229,29 @@ export default function ManualOrdersPage() {
         await removeLinkedTx(id);
         await deleteManualOrder(id);
         setDeleteConfirm(null);
+    };
+
+    const handleImageUpload = async (files: FileList | null) => {
+        if (!files || !supabase) return;
+        setUploading(true);
+        const newUrls: string[] = [];
+        for (const file of Array.from(files)) {
+            if (!file.type.startsWith("image/")) continue;
+            const ext = file.name.split(".").pop();
+            const fileName = `orders/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+            const { error } = await supabase.storage.from("order-images").upload(fileName, file);
+            if (!error) {
+                const { data: urlData } = supabase.storage.from("order-images").getPublicUrl(fileName);
+                if (urlData?.publicUrl) newUrls.push(urlData.publicUrl);
+            }
+        }
+        setImages((prev) => [...prev, ...newUrls]);
+        setUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const removeImage = (url: string) => {
+        setImages((prev) => prev.filter((u) => u !== url));
     };
 
     const filtered = orders.filter((o) => {
@@ -569,6 +602,27 @@ export default function ManualOrdersPage() {
                                 <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ghi chú thêm..." rows={2}
                                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-pink-500 transition-colors resize-none" />
                             </div>
+                            {/* Image upload */}
+                            <div>
+                                <label className="text-xs text-gray-400 mb-1.5 flex items-center gap-1.5"><ImagePlus size={12} /> Ảnh đính kèm</label>
+                                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+                                    onChange={(e) => handleImageUpload(e.target.files)} />
+                                <div className="flex flex-wrap gap-2 mt-1.5">
+                                    {images.map((url, i) => (
+                                        <div key={i} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-gray-700">
+                                            <img src={url} alt="" className="w-full h-full object-cover" />
+                                            <button type="button" onClick={() => removeImage(url)}
+                                                className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <X size={10} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                                        className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-700 hover:border-pink-500 text-gray-500 hover:text-pink-400 flex flex-col items-center justify-center transition-colors disabled:opacity-50">
+                                        {uploading ? <Loader2 size={20} className="animate-spin" /> : <><ImagePlus size={20} /><span className="text-[10px] mt-1">Thêm ảnh</span></>}
+                                    </button>
+                                </div>
+                            </div>
                             <button onClick={handleSubmit} disabled={!customerName.trim() || !amount.trim()}
                                 className="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                                 <CheckCircle size={18} />
@@ -638,6 +692,19 @@ export default function ManualOrdersPage() {
                                 <div className="p-3 bg-gray-800/50 rounded-xl">
                                     <p className="text-xs text-gray-400 mb-1">Ghi chú</p>
                                     <p className="text-sm">{viewingOrder.note}</p>
+                                </div>
+                            )}
+                            {viewingOrder.images && viewingOrder.images.length > 0 && (
+                                <div className="p-3 bg-gray-800/50 rounded-xl">
+                                    <p className="text-xs text-gray-400 mb-2">Ảnh đính kèm</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {viewingOrder.images.map((url, i) => (
+                                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                                                className="w-24 h-24 rounded-xl overflow-hidden border border-gray-700 hover:border-pink-500 transition-colors block">
+                                                <img src={url} alt="" className="w-full h-full object-cover" />
+                                            </a>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>

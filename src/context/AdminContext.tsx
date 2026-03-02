@@ -52,6 +52,7 @@ export interface ManualOrder {
     status: "pending" | "confirmed" | "delivering" | "completed" | "cancelled";
     paymentStatus: "unpaid" | "deposit" | "cod" | "paid";
     depositAmount: number;
+    images: string[];
     createdAt: string;
 }
 
@@ -184,6 +185,7 @@ function dbToManualOrder(row: Record<string, unknown>): ManualOrder {
         status: row.status as ManualOrder["status"],
         paymentStatus: (row.payment_status as ManualOrder["paymentStatus"]) || "unpaid",
         depositAmount: Number(row.deposit_amount) || 0,
+        images: (() => { try { return JSON.parse((row.images as string) || "[]"); } catch { return []; } })(),
         createdAt: row.created_at as string,
     };
 }
@@ -528,6 +530,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                     status: newOrder.status,
                     payment_status: newOrder.paymentStatus,
                     deposit_amount: newOrder.depositAmount || 0,
+                    images: JSON.stringify(newOrder.images || []),
                 });
             }
         },
@@ -553,6 +556,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 if (updates.status !== undefined) dbUpdates.status = updates.status;
                 if (updates.paymentStatus !== undefined) dbUpdates.payment_status = updates.paymentStatus;
                 if (updates.depositAmount !== undefined) dbUpdates.deposit_amount = updates.depositAmount;
+                if (updates.images !== undefined) dbUpdates.images = JSON.stringify(updates.images);
                 await supabase.from("manual_orders").update(dbUpdates).eq("id", id);
             }
         },
