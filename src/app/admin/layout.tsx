@@ -13,6 +13,7 @@ import {
     Store,
     LogOut,
     Key,
+    ClipboardList,
 } from "lucide-react";
 import AdminAuthGate from "@/components/admin/AdminAuthGate";
 
@@ -21,6 +22,7 @@ const navItems = [
     { href: "/admin/products", label: "Sản phẩm", icon: Package },
     { href: "/admin/finance", label: "Thu chi", icon: Wallet },
     { href: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
+    { href: "/admin/manual-orders", label: "Sổ đơn hàng", icon: ClipboardList },
 ];
 
 const superAdminNavItems = [
