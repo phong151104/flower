@@ -38,6 +38,23 @@ export interface Order {
     updatedAt: string;
 }
 
+export interface ManualOrder {
+    id: string;
+    customerName: string;
+    customerPhone: string;
+    customerAddress: string;
+    description: string;
+    amount: number;
+    source: string;
+    note: string;
+    orderDate: string;
+    deliveryDate: string;
+    status: "pending" | "confirmed" | "delivering" | "completed" | "cancelled";
+    paymentStatus: "unpaid" | "deposit" | "cod" | "paid";
+    depositAmount: number;
+    createdAt: string;
+}
+
 interface AdminContextType {
     // Products
     products: Product[];
@@ -61,6 +78,12 @@ interface AdminContextType {
     updateOrderStatus: (id: string, status: Order["status"]) => void;
     deleteOrder: (id: string) => void;
     getOrdersByUserId: (userId: string) => Order[];
+
+    // Manual Orders
+    manualOrders: ManualOrder[];
+    addManualOrder: (order: Omit<ManualOrder, "id" | "createdAt">) => Promise<void>;
+    updateManualOrder: (id: string, updates: Partial<Omit<ManualOrder, "id" | "createdAt">>) => Promise<void>;
+    deleteManualOrder: (id: string) => Promise<void>;
 
     // Loading & Reload
     isLoading: boolean;
@@ -146,12 +169,32 @@ function dbToOrder(row: Record<string, unknown>): Order {
     };
 }
 
+function dbToManualOrder(row: Record<string, unknown>): ManualOrder {
+    return {
+        id: row.id as string,
+        customerName: row.customer_name as string,
+        customerPhone: (row.customer_phone as string) || "",
+        customerAddress: (row.customer_address as string) || "",
+        description: (row.description as string) || "",
+        amount: row.amount as number,
+        source: (row.source as string) || "other",
+        note: (row.note as string) || "",
+        orderDate: row.order_date as string,
+        deliveryDate: (row.delivery_date as string) || "",
+        status: row.status as ManualOrder["status"],
+        paymentStatus: (row.payment_status as ManualOrder["paymentStatus"]) || "unpaid",
+        depositAmount: Number(row.deposit_amount) || 0,
+        createdAt: row.created_at as string,
+    };
+}
+
 // ============ PROVIDER ============
 
 export function AdminProvider({ children }: { children: ReactNode }) {
     const [products, setProducts] = useState<Product[]>(defaultProducts);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
+    const [manualOrders, setManualOrders] = useState<ManualOrder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [dbReady, setDbReady] = useState(false);
 
@@ -190,6 +233,13 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 .select("*")
                 .order("created_at", { ascending: false });
             if (dbOrders) setOrders(dbOrders.map(dbToOrder));
+
+            // Load manual orders
+            const { data: dbManualOrders } = await supabase
+                .from("manual_orders")
+                .select("*")
+                .order("created_at", { ascending: false });
+            if (dbManualOrders) setManualOrders(dbManualOrders.map(dbToManualOrder));
 
             setDbReady(true);
         } catch (err) {
@@ -454,6 +504,71 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         [orders]
     );
 
+    // ---- Manual Orders ----
+    const addManualOrder = useCallback(
+        async (order: Omit<ManualOrder, "id" | "createdAt">) => {
+            const newOrder: ManualOrder = {
+                ...order,
+                id: generateId(),
+                createdAt: new Date().toISOString(),
+            };
+            setManualOrders((prev) => [newOrder, ...prev]);
+            if (dbReady && supabase) {
+                await supabase.from("manual_orders").insert({
+                    id: newOrder.id,
+                    customer_name: newOrder.customerName,
+                    customer_phone: newOrder.customerPhone,
+                    customer_address: newOrder.customerAddress,
+                    description: newOrder.description,
+                    amount: newOrder.amount,
+                    source: newOrder.source,
+                    note: newOrder.note,
+                    order_date: newOrder.orderDate,
+                    delivery_date: newOrder.deliveryDate || null,
+                    status: newOrder.status,
+                    payment_status: newOrder.paymentStatus,
+                    deposit_amount: newOrder.depositAmount || 0,
+                });
+            }
+        },
+        [dbReady]
+    );
+
+    const updateManualOrder = useCallback(
+        async (id: string, updates: Partial<Omit<ManualOrder, "id" | "createdAt">>) => {
+            setManualOrders((prev) =>
+                prev.map((o) => (o.id === id ? { ...o, ...updates } : o))
+            );
+            if (dbReady && supabase) {
+                const dbUpdates: Record<string, unknown> = {};
+                if (updates.customerName !== undefined) dbUpdates.customer_name = updates.customerName;
+                if (updates.customerPhone !== undefined) dbUpdates.customer_phone = updates.customerPhone;
+                if (updates.customerAddress !== undefined) dbUpdates.customer_address = updates.customerAddress;
+                if (updates.description !== undefined) dbUpdates.description = updates.description;
+                if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+                if (updates.source !== undefined) dbUpdates.source = updates.source;
+                if (updates.note !== undefined) dbUpdates.note = updates.note;
+                if (updates.orderDate !== undefined) dbUpdates.order_date = updates.orderDate;
+                if (updates.deliveryDate !== undefined) dbUpdates.delivery_date = updates.deliveryDate || null;
+                if (updates.status !== undefined) dbUpdates.status = updates.status;
+                if (updates.paymentStatus !== undefined) dbUpdates.payment_status = updates.paymentStatus;
+                if (updates.depositAmount !== undefined) dbUpdates.deposit_amount = updates.depositAmount;
+                await supabase.from("manual_orders").update(dbUpdates).eq("id", id);
+            }
+        },
+        [dbReady]
+    );
+
+    const deleteManualOrder = useCallback(
+        async (id: string) => {
+            setManualOrders((prev) => prev.filter((o) => o.id !== id));
+            if (dbReady && supabase) {
+                await supabase.from("manual_orders").delete().eq("id", id);
+            }
+        },
+        [dbReady]
+    );
+
     return (
         <AdminContext.Provider
             value={{
@@ -474,6 +589,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 updateOrderStatus,
                 deleteOrder,
                 getOrdersByUserId,
+                manualOrders,
+                addManualOrder,
+                updateManualOrder,
+                deleteManualOrder,
                 isLoading,
                 reloadData: loadData,
             }}
