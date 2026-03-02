@@ -479,7 +479,7 @@ export default function ManualOrdersPage() {
                                 return (
                                     <button key={i}
                                         onClick={() => setSelectedDate(day.dateStr === selectedDate ? null : day.dateStr)}
-                                        className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all text-sm
+                                        className={`relative py-10 rounded-lg flex flex-col items-center justify-center transition-all text-sm
                                             ${!day.isCurrentMonth ? "text-gray-700" : "text-gray-300"}
                                             ${isToday && !isSelected ? "ring-1 ring-pink-500/50" : ""}
                                             ${isSelected ? "bg-pink-500/20 ring-2 ring-pink-500 text-white" : "hover:bg-gray-800"}
