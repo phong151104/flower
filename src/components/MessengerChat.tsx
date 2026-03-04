@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 const FB_PAGE_ID = "100063905831084";
 
@@ -10,6 +11,7 @@ export default function MessengerChat() {
     const [sdkLoaded, setSdkLoaded] = useState(false);
     const [fallback, setFallback] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
+    const pathname = usePathname();
 
     useEffect(() => {
         // Try loading Facebook SDK for Customer Chat Plugin
@@ -53,6 +55,9 @@ export default function MessengerChat() {
             "noopener,noreferrer"
         );
     };
+
+    // Hide chat on admin routes
+    if (pathname?.startsWith("/admin")) return null;
 
     return (
         <>
