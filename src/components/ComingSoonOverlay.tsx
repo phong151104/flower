@@ -13,12 +13,14 @@ export default function ComingSoonOverlay() {
 
     useEffect(() => {
         setMounted(true);
-        // Prevent body scroll when overlay is active
-        document.body.style.overflow = "hidden";
+        // Prevent body scroll only when overlay is active and not on admin routes
+        if (!pathname?.startsWith("/admin")) {
+            document.body.style.overflow = "hidden";
+        }
         return () => {
             document.body.style.overflow = "auto";
         };
-    }, []);
+    }, [pathname]);
 
     if (!mounted) return null;
 
