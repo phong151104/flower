@@ -198,6 +198,7 @@ function ShopContent() {
                                             isOpen={filterOpen}
                                             onClose={() => setFilterOpen(false)}
                                             resultCount={filteredProducts.length}
+                                            products={products}
                                         />
                                     </div>
 
@@ -209,6 +210,7 @@ function ShopContent() {
                                             isOpen={filterOpen}
                                             onClose={() => setFilterOpen(false)}
                                             resultCount={filteredProducts.length}
+                                            products={products}
                                         />
                                     </div>
 

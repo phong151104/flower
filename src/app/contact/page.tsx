@@ -70,7 +70,7 @@ const socials = [
     {
         name: "Instagram",
         handle: "@bloomella.vn",
-        url: "https://instagram.com/bloomella.vn",
+        url: "https://www.instagram.com/bloomella.florist/",
         desc: "Hình ảnh bó hoa đẹp, behind the scenes",
         icon: (
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">

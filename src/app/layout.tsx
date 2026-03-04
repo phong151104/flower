@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
-
 import MessengerChat from "@/components/MessengerChat";
+import ComingSoonOverlay from "@/components/ComingSoonOverlay";
 
 export const metadata: Metadata = {
     title: "Bloomella - Beautiful Flower Bouquets & Arrangements",
@@ -28,6 +28,7 @@ export default function RootLayout({
             <body className="min-h-screen">
                 <Providers>{children}</Providers>
                 <MessengerChat />
+                <ComingSoonOverlay />
             </body>
         </html>
     );

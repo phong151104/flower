@@ -42,7 +42,7 @@ export default function Footer() {
                                 <Facebook size={18} />
                             </a>
                             <a
-                                href="https://www.facebook.com/bloomella102"
+                                href="https://www.instagram.com/bloomella.florist/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center

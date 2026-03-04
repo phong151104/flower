@@ -13,7 +13,6 @@ export default function Home() {
         <main>
             <Navbar />
             <HeroSection />
-            <StatsSection />
             <BestSellers />
             <Categories />
             <FindPerfect />

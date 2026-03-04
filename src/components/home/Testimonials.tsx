@@ -15,30 +15,30 @@ interface Testimonial {
 const testimonials: Testimonial[] = [
     {
         id: 1,
-        name: "Nguyễn Thị Mai",
+        name: "Phạm Đức Anh",
         role: "Khách hàng thân thiết",
         content:
-            "Hoa rất đẹp và tươi lâu! Tôi luôn chọn Bloomella cho mọi dịp đặc biệt. Dịch vụ giao hàng nhanh chóng và đóng gói cẩn thận.",
+            "Hoa rất đẹp và tươi lâu! Tôi luôn chọn Bloomella mỗi dịp sinh nhật và kỷ niệm. Dịch vụ giao hàng nhanh chóng và đóng gói cẩn thận.",
         rating: 5,
-        avatar: "M",
+        avatar: "A",
     },
     {
         id: 2,
-        name: "Trần Văn Hoàng",
-        role: "Đối tác cưới hỏi",
+        name: "Cao Thái Sơn",
+        role: "Khách hàng thường xuyên",
         content:
-            "Đã hợp tác với Bloomella cho 3 đám cưới. Mỗi lần đều xuất sắc! Hoa tươi, thiết kế sáng tạo và đúng yêu cầu.",
+            "Đã đặt hoa ở Bloomella nhiều lần để tặng đối tác và gia đình. Mỗi lần đều rất hài lòng! Hoa tươi, thiết kế tinh tế và đúng yêu cầu.",
         rating: 5,
-        avatar: "H",
+        avatar: "S",
     },
     {
         id: 3,
-        name: "Phạm Minh Anh",
+        name: "Hoàng Thanh Hoa",
         role: "Khách hàng mới",
         content:
             "Lần đầu đặt hoa online và rất ấn tượng! Bó hoa đẹp hơn hình, giá cả hợp lý. Chắc chắn sẽ quay lại.",
         rating: 5,
-        avatar: "A",
+        avatar: "H",
     },
 ];
 

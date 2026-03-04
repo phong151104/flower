@@ -20,20 +20,17 @@ export interface Product {
 const categoryDefs = [
     { id: "all", name: "Tất cả" },
     { id: "bouquet", name: "Bó hoa" },
-    { id: "basket", name: "Giỏ hoa" },
-    { id: "box", name: "Hộp hoa" },
-    { id: "wedding", name: "Hoa cưới" },
-    { id: "dried", name: "Hoa khô" },
+    { id: "fresh", name: "Hoa tươi" },
+    { id: "silk", name: "Hoa lụa" },
+    { id: "crochet", name: "Hoa móc len" },
 ];
 
 export const occasions = [
     "Sinh nhật",
     "Kỷ niệm",
-    "Đám cưới",
     "Khai trương",
     "Tặng bạn",
     "Ngày lễ",
-    "Chia buồn",
 ];
 
 export const flowerTypeOptions = [

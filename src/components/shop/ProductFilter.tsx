@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import { SlidersHorizontal, X } from "lucide-react";
-import { categories, occasions, colorOptions } from "@/data/products";
+import { categories as categoryDefs, occasions, colorOptions } from "@/data/products";
+import type { Product } from "@/data/products";
 
 interface FilterState {
     category: string;
@@ -18,6 +19,7 @@ interface ProductFilterProps {
     isOpen: boolean;
     onClose: () => void;
     resultCount: number;
+    products: Product[];
 }
 
 export default function ProductFilter({
@@ -26,7 +28,12 @@ export default function ProductFilter({
     isOpen,
     onClose,
     resultCount,
+    products,
 }: ProductFilterProps) {
+    const categories = categoryDefs.map((cat) => ({
+        ...cat,
+        count: cat.id === "all" ? products.length : products.filter((p) => p.category === cat.id).length,
+    }));
     const updateFilter = (key: keyof FilterState, value: unknown) => {
         onFilterChange({ ...filters, [key]: value });
     };

@@ -1,50 +1,57 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flower2, Heart, Sun, Gem, Baby } from "lucide-react";
+import Link from "next/link";
+import { Flower2, Heart, Cake, PartyPopper, Gift } from "lucide-react";
 import { flowerImages } from "@/lib/images";
 
 interface Category {
     name: string;
     icon: React.ReactNode;
-    count: number;
+    desc: string;
+    href: string;
     color: string;
     bgColor: string;
 }
 
 const categories: Category[] = [
     {
-        name: "Bó Hoa",
+        name: "Hoa Tươi",
         icon: <Flower2 size={24} />,
-        count: 45,
+        desc: "Bó hoa tươi tự nhiên, sắc màu rực rỡ",
+        href: "/shop?category=fresh",
         color: "text-pink-500",
         bgColor: "bg-pink-50 hover:bg-pink-100",
     },
     {
-        name: "Kỷ Niệm",
+        name: "Hoa Lụa",
         icon: <Heart size={24} />,
-        count: 32,
+        desc: "Hoa lụa bền đẹp, giữ mãi theo thời gian",
+        href: "/shop?category=silk",
         color: "text-red-400",
         bgColor: "bg-red-50 hover:bg-red-100",
     },
     {
-        name: "Mùa Hè",
-        icon: <Sun size={24} />,
-        count: 28,
+        name: "Hoa Sinh Nhật",
+        icon: <Cake size={24} />,
+        desc: "Tặng người thân yêu dịp sinh nhật",
+        href: "/shop?occasion=birthday",
         color: "text-amber-500",
         bgColor: "bg-amber-50 hover:bg-amber-100",
     },
     {
-        name: "Đám Cưới",
-        icon: <Gem size={24} />,
-        count: 56,
+        name: "Hoa Khai Trương",
+        icon: <PartyPopper size={24} />,
+        desc: "Chúc mừng khai trương, thăng chức",
+        href: "/shop?occasion=congratulations",
         color: "text-purple-400",
         bgColor: "bg-purple-50 hover:bg-purple-100",
     },
     {
-        name: "Ngày Của Mẹ",
-        icon: <Baby size={24} />,
-        count: 19,
+        name: "Hoa Ngày Lễ",
+        icon: <Gift size={24} />,
+        desc: "Valentine, 8/3, 20/10 và các dịp lễ",
+        href: "/shop?occasion=holiday",
         color: "text-emerald-500",
         bgColor: "bg-emerald-50 hover:bg-emerald-100",
     },
@@ -79,30 +86,33 @@ export default function Categories() {
 
                         <div className="space-y-4">
                             {categories.map((cat, index) => (
-                                <motion.button
+                                <motion.div
                                     key={cat.name}
                                     initial={{ opacity: 0, x: -20 }}
                                     whileInView={{ opacity: 1, x: 0 }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.4, delay: index * 0.1 }}
                                     whileHover={{ x: 8 }}
-                                    className={`w-full flex items-center gap-4 p-4 rounded-2xl ${cat.bgColor} transition-all duration-300 group`}
                                 >
-                                    <div
-                                        className={`w-12 h-12 rounded-xl ${cat.bgColor} flex items-center justify-center ${cat.color} 
-                                group-hover:scale-110 transition-transform`}
+                                    <Link href={cat.href}
+                                        className={`w-full flex items-center gap-4 p-4 rounded-2xl ${cat.bgColor} transition-all duration-300 group`}
                                     >
-                                        {cat.icon}
-                                    </div>
-                                    <div className="flex-1 text-left">
-                                        <span className="font-semibold text-gray-800">
-                                            {cat.name}
-                                        </span>
-                                    </div>
-                                    <span className="text-sm text-gray-400 bg-white/80 px-3 py-1 rounded-full">
-                                        {cat.count} sản phẩm
-                                    </span>
-                                </motion.button>
+                                        <div
+                                            className={`w-12 h-12 rounded-xl ${cat.bgColor} flex items-center justify-center ${cat.color} 
+                                group-hover:scale-110 transition-transform`}
+                                        >
+                                            {cat.icon}
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <span className="font-semibold text-gray-800 block">
+                                                {cat.name}
+                                            </span>
+                                            <span className="text-xs text-gray-400">
+                                                {cat.desc}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                </motion.div>
                             ))}
                         </div>
                     </motion.div>
