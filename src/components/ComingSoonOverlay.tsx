@@ -4,10 +4,12 @@ import { motion } from "framer-motion";
 import { Facebook, Instagram, Phone, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function ComingSoonOverlay() {
     // Only show on client side to avoid hydration mismatch if using local storage to dismiss later
     const [mounted, setMounted] = useState(false);
+    const pathname = usePathname();
 
     useEffect(() => {
         setMounted(true);
@@ -19,6 +21,9 @@ export default function ComingSoonOverlay() {
     }, []);
 
     if (!mounted) return null;
+
+    // Hide overlay on admin routes
+    if (pathname?.startsWith("/admin")) return null;
 
     return (
         <div className="fixed inset-0 z-[99999] bg-cream-50 flex flex-col items-center justify-center p-4">
