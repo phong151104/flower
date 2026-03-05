@@ -24,7 +24,7 @@ const incomeCategories = [
 ];
 
 export default function AdminFinance() {
-    const { transactions, addTransaction, updateTransaction, deleteTransaction, totalIncome, totalExpense, profit } =
+    const { transactions, addTransaction, updateTransaction, deleteTransaction, totalIncome, totalExpense, profit, manualOrders } =
         useAdmin();
 
     const [showForm, setShowForm] = useState(false);
@@ -139,7 +139,19 @@ export default function AdminFinance() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-400">Tổng thu ước tính</span>
+                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                            <TrendingUp size={18} className="text-amber-400" />
+                        </div>
+                    </div>
+                    <p className="text-2xl font-bold text-amber-400">
+                        {formatCurrency(manualOrders.reduce((s, o) => s + (o.amount || 0), 0))}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">{manualOrders.length} đơn hàng</p>
+                </div>
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-400">Tổng thu</span>
