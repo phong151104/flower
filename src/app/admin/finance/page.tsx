@@ -139,53 +139,66 @@ export default function AdminFinance() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-400">Tổng thu ước tính</span>
-                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                            <TrendingUp size={18} className="text-amber-400" />
+            {(() => {
+                const realIncome = manualOrders
+                    .filter((o) => o.paymentStatus === "paid")
+                    .reduce((s, o) => s + o.amount, 0)
+                    + manualOrders
+                        .filter((o) => o.paymentStatus === "deposit")
+                        .reduce((s, o) => s + o.depositAmount, 0);
+                const currentExpense = filterMonth ? filteredExpense : totalExpense;
+                const currentIncome = filterMonth ? filteredIncome : realIncome;
+                const currentProfit = currentIncome - currentExpense;
+                return (
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-gray-400">Tổng thu ước tính</span>
+                                <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                                    <TrendingUp size={18} className="text-amber-400" />
+                                </div>
+                            </div>
+                            <p className="text-2xl font-bold text-amber-400">
+                                {formatCurrency(manualOrders.reduce((s, o) => s + (o.amount || 0), 0))}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">{manualOrders.length} đơn hàng</p>
+                        </div>
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-gray-400">Tổng thu</span>
+                                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                                    <TrendingUp size={18} className="text-emerald-400" />
+                                </div>
+                            </div>
+                            <p className="text-2xl font-bold text-emerald-400">
+                                {formatCurrency(currentIncome)}
+                            </p>
+                        </div>
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-gray-400">Tổng chi</span>
+                                <div className="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center">
+                                    <TrendingDown size={18} className="text-red-400" />
+                                </div>
+                            </div>
+                            <p className="text-2xl font-bold text-red-400">
+                                {formatCurrency(currentExpense)}
+                            </p>
+                        </div>
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-gray-400">Lợi nhuận</span>
+                                <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                    <Wallet size={18} className="text-blue-400" />
+                                </div>
+                            </div>
+                            <p className={`text-2xl font-bold ${currentProfit >= 0 ? "text-blue-400" : "text-red-400"}`}>
+                                {formatCurrency(currentProfit)}
+                            </p>
                         </div>
                     </div>
-                    <p className="text-2xl font-bold text-amber-400">
-                        {formatCurrency(manualOrders.reduce((s, o) => s + (o.amount || 0), 0))}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">{manualOrders.length} đơn hàng</p>
-                </div>
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-400">Tổng thu</span>
-                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                            <TrendingUp size={18} className="text-emerald-400" />
-                        </div>
-                    </div>
-                    <p className="text-2xl font-bold text-emerald-400">
-                        {formatCurrency(filterMonth ? filteredIncome : totalIncome)}
-                    </p>
-                </div>
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-400">Tổng chi</span>
-                        <div className="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center">
-                            <TrendingDown size={18} className="text-red-400" />
-                        </div>
-                    </div>
-                    <p className="text-2xl font-bold text-red-400">
-                        {formatCurrency(filterMonth ? filteredExpense : totalExpense)}
-                    </p>
-                </div>
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-400">Lợi nhuận</span>
-                        <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                            <Wallet size={18} className="text-blue-400" />
-                        </div>
-                    </div>
-                    <p className={`text-2xl font-bold ${(filterMonth ? filteredIncome - filteredExpense : profit) >= 0 ? "text-blue-400" : "text-red-400"}`}>
-                        {formatCurrency(filterMonth ? filteredIncome - filteredExpense : profit)}
-                    </p>
-                </div>
-            </div>
+                );
+            })()}
 
             {/* Add Form */}
             {showForm && (
