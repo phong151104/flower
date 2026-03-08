@@ -49,6 +49,7 @@ export interface ManualOrder {
     note: string;
     orderDate: string;
     deliveryDate: string;
+    deliveryTime: string;
     status: "pending" | "confirmed" | "delivering" | "completed" | "cancelled";
     paymentStatus: "unpaid" | "deposit" | "cod" | "paid";
     depositAmount: number;
@@ -182,6 +183,7 @@ function dbToManualOrder(row: Record<string, unknown>): ManualOrder {
         note: (row.note as string) || "",
         orderDate: row.order_date as string,
         deliveryDate: (row.delivery_date as string) || "",
+        deliveryTime: (row.delivery_time as string) || "",
         status: row.status as ManualOrder["status"],
         paymentStatus: (row.payment_status as ManualOrder["paymentStatus"]) || "unpaid",
         depositAmount: Number(row.deposit_amount) || 0,
@@ -527,6 +529,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                     note: newOrder.note,
                     order_date: newOrder.orderDate,
                     delivery_date: newOrder.deliveryDate || null,
+                    delivery_time: newOrder.deliveryTime || null,
                     status: newOrder.status,
                     payment_status: newOrder.paymentStatus,
                     deposit_amount: newOrder.depositAmount || 0,
@@ -553,6 +556,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                 if (updates.note !== undefined) dbUpdates.note = updates.note;
                 if (updates.orderDate !== undefined) dbUpdates.order_date = updates.orderDate;
                 if (updates.deliveryDate !== undefined) dbUpdates.delivery_date = updates.deliveryDate || null;
+                if (updates.deliveryTime !== undefined) dbUpdates.delivery_time = updates.deliveryTime || null;
                 if (updates.status !== undefined) dbUpdates.status = updates.status;
                 if (updates.paymentStatus !== undefined) dbUpdates.payment_status = updates.paymentStatus;
                 if (updates.depositAmount !== undefined) dbUpdates.deposit_amount = updates.depositAmount;

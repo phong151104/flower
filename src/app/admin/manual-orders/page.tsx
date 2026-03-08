@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useAdmin, ManualOrder } from "@/context/AdminContext";
 import {
     Plus,
@@ -81,6 +81,20 @@ export default function ManualOrdersPage() {
     const [calYear, setCalYear] = useState(new Date().getFullYear());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+    // Sorting state
+    type SortColumn = "status" | "paymentStatus" | "orderDate" | "deliveryDate" | null;
+    const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+    const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+    const toggleSort = useCallback((col: SortColumn) => {
+        if (sortColumn === col) {
+            setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        } else {
+            setSortColumn(col);
+            setSortDir("asc");
+        }
+    }, [sortColumn]);
+
     // Form state
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
@@ -91,6 +105,7 @@ export default function ManualOrdersPage() {
     const [note, setNote] = useState("");
     const [orderDate, setOrderDate] = useState(new Date().toISOString().slice(0, 10));
     const [deliveryDate, setDeliveryDate] = useState("");
+    const [deliveryTime, setDeliveryTime] = useState("");
     const [status, setStatus] = useState<ManualOrder["status"]>("pending");
     const [paymentStatus, setPaymentStatus] = useState<ManualOrder["paymentStatus"]>("unpaid");
     const [depositAmount, setDepositAmount] = useState("");
@@ -114,6 +129,7 @@ export default function ManualOrdersPage() {
         setNote("");
         setOrderDate(new Date().toISOString().slice(0, 10));
         setDeliveryDate("");
+        setDeliveryTime("");
         setStatus("pending");
         setPaymentStatus("unpaid");
         setDepositAmount("");
@@ -131,6 +147,7 @@ export default function ManualOrdersPage() {
         setNote(order.note);
         setOrderDate(order.orderDate);
         setDeliveryDate(order.deliveryDate);
+        setDeliveryTime(order.deliveryTime || "");
         setStatus(order.status);
         setPaymentStatus(order.paymentStatus);
         setDepositAmount(order.depositAmount > 0 ? order.depositAmount.toString() : "");
@@ -172,7 +189,7 @@ export default function ManualOrdersPage() {
             await updateManualOrder(editingId, {
                 customerName: customerName.trim(), customerPhone: customerPhone.trim(),
                 customerAddress: customerAddress.trim(), description: description.trim(),
-                amount: orderAmount, source, note: note.trim(), orderDate, deliveryDate,
+                amount: orderAmount, source, note: note.trim(), orderDate, deliveryDate, deliveryTime,
                 status, paymentStatus, depositAmount: paymentStatus === "deposit" ? deposit : 0,
                 images,
             });
@@ -189,7 +206,7 @@ export default function ManualOrdersPage() {
             await addManualOrder({
                 customerName: customerName.trim(), customerPhone: customerPhone.trim(),
                 customerAddress: customerAddress.trim(), description: description.trim(),
-                amount: orderAmount, source, note: note.trim(), orderDate, deliveryDate,
+                amount: orderAmount, source, note: note.trim(), orderDate, deliveryDate, deliveryTime,
                 status, paymentStatus, depositAmount: paymentStatus === "deposit" ? deposit : 0,
                 images,
             });
@@ -599,7 +616,7 @@ export default function ManualOrdersPage() {
                                     </select>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-3">
                                 <div>
                                     <label className="text-xs text-gray-400 mb-1.5 flex items-center gap-1.5"><Calendar size={12} /> Ngày đặt</label>
                                     <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)}
@@ -608,6 +625,11 @@ export default function ManualOrdersPage() {
                                 <div>
                                     <label className="text-xs text-gray-400 mb-1.5 flex items-center gap-1.5"><Truck size={12} /> Ngày giao</label>
                                     <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-pink-500 transition-colors" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-400 mb-1.5 flex items-center gap-1.5"><Clock size={12} /> Giờ nhận</label>
+                                    <input type="time" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)}
                                         className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-pink-500 transition-colors" />
                                 </div>
                             </div>
@@ -767,6 +789,47 @@ export default function ManualOrdersPage() {
 
     // ===== Table render helper =====
     function renderOrderTable(list: ManualOrder[]) {
+        // Sort logic
+        const statusOrder = ["pending", "confirmed", "delivering", "completed", "cancelled"];
+        const paymentOrder = ["unpaid", "deposit", "paid"];
+        let sorted = [...list];
+        if (sortColumn) {
+            sorted.sort((a, b) => {
+                let cmp = 0;
+                switch (sortColumn) {
+                    case "status":
+                        cmp = statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+                        break;
+                    case "paymentStatus":
+                        cmp = paymentOrder.indexOf(a.paymentStatus) - paymentOrder.indexOf(b.paymentStatus);
+                        break;
+                    case "orderDate":
+                        cmp = (a.orderDate || "").localeCompare(b.orderDate || "");
+                        break;
+                    case "deliveryDate":
+                        cmp = (a.deliveryDate || "").localeCompare(b.deliveryDate || "");
+                        break;
+                }
+                return sortDir === "asc" ? cmp : -cmp;
+            });
+        }
+
+        const SortHeader = ({ col, children }: { col: SortColumn; children: React.ReactNode }) => (
+            <th
+                className="py-3 px-4 font-medium cursor-pointer hover:text-white select-none transition-colors"
+                onClick={() => toggleSort(col)}
+            >
+                <span className="inline-flex items-center gap-1">
+                    {children}
+                    {sortColumn === col ? (
+                        <span className="text-pink-400">{sortDir === "asc" ? "▲" : "▼"}</span>
+                    ) : (
+                        <span className="text-gray-600">⇅</span>
+                    )}
+                </span>
+            </th>
+        );
+
         return (
             <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
@@ -777,15 +840,16 @@ export default function ManualOrdersPage() {
                                 <th className="py-3 px-4 font-medium">Mô tả</th>
                                 <th className="py-3 px-4 font-medium">Số tiền</th>
                                 <th className="py-3 px-4 font-medium">Nguồn</th>
-                                <th className="py-3 px-4 font-medium">Trạng thái</th>
-                                <th className="py-3 px-4 font-medium">Thanh toán</th>
-                                <th className="py-3 px-4 font-medium">Ngày đặt</th>
-                                <th className="py-3 px-4 font-medium">Ngày giao</th>
+                                <SortHeader col="status">Trạng thái</SortHeader>
+                                <SortHeader col="paymentStatus">Thanh toán</SortHeader>
+                                <SortHeader col="orderDate">Ngày đặt</SortHeader>
+                                <SortHeader col="deliveryDate">Ngày giao</SortHeader>
+                                <th className="py-3 px-4 font-medium">Giờ giao</th>
                                 <th className="py-3 px-4 font-medium text-right">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {list.map((order) => {
+                            {sorted.map((order) => {
                                 const sourceInfo = getSourceInfo(order.source);
                                 const statusInfo = getStatusInfo(order.status);
                                 const remaining = order.paymentStatus === "deposit" ? order.amount - order.depositAmount : 0;
@@ -823,7 +887,12 @@ export default function ManualOrdersPage() {
                                             </select>
                                         </td>
                                         <td className="py-3 px-4 text-gray-400 text-xs">{new Date(order.orderDate).toLocaleDateString("vi-VN")}</td>
-                                        <td className="py-3 px-4 text-gray-400 text-xs">{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString("vi-VN") : "—"}</td>
+                                        <td className="py-3 px-4 text-gray-400 text-xs">
+                                            {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString("vi-VN") : "—"}
+                                        </td>
+                                        <td className="py-3 px-4 text-xs">
+                                            {order.deliveryTime ? <span className="text-amber-400 font-medium">{order.deliveryTime}</span> : <span className="text-gray-600">—</span>}
+                                        </td>
                                         <td className="py-3 px-4">
                                             <div className="flex items-center justify-end gap-1">
                                                 <button onClick={() => setViewingOrder(order)} className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors" title="Xem"><Eye size={16} /></button>
