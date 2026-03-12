@@ -140,14 +140,9 @@ export default function AdminFinance() {
 
             {/* Summary Cards */}
             {(() => {
-                const realIncome = manualOrders
-                    .filter((o) => o.paymentStatus === "paid")
-                    .reduce((s, o) => s + o.amount, 0)
-                    + manualOrders
-                        .filter((o) => o.paymentStatus === "deposit")
-                        .reduce((s, o) => s + o.depositAmount, 0);
+                const estimatedIncome = manualOrders.reduce((s, o) => s + (o.amount || 0), 0);
                 const currentExpense = filterMonth ? filteredExpense : totalExpense;
-                const currentIncome = filterMonth ? filteredIncome : realIncome;
+                const currentIncome = filterMonth ? filteredIncome : totalIncome;
                 const currentProfit = currentIncome - currentExpense;
                 return (
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -159,7 +154,7 @@ export default function AdminFinance() {
                                 </div>
                             </div>
                             <p className="text-2xl font-bold text-amber-400">
-                                {formatCurrency(manualOrders.reduce((s, o) => s + (o.amount || 0), 0))}
+                                {formatCurrency(estimatedIncome)}
                             </p>
                             <p className="text-xs text-gray-500 mt-1">{manualOrders.length} đơn hàng</p>
                         </div>
