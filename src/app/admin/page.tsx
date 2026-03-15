@@ -327,7 +327,7 @@ export default function AdminDashboard() {
                                         <Tooltip
                                             contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "12px", fontSize: "13px" }}
                                             itemStyle={{ color: "#d1d5db" }}
-                                            formatter={(value: number, name: string) => [`${value} đơn`, name]}
+                                            formatter={(value, name) => [`${value} đơn`, name]}
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
@@ -374,7 +374,7 @@ export default function AdminDashboard() {
                                         <Tooltip
                                             contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "12px", fontSize: "13px" }}
                                             itemStyle={{ color: "#d1d5db" }}
-                                            formatter={(value: number, name: string) => [`${value} đơn`, name]}
+                                            formatter={(value, name) => [`${value} đơn`, name]}
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
@@ -413,7 +413,7 @@ export default function AdminDashboard() {
                                     <Tooltip
                                         contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "12px", fontSize: "13px" }}
                                         itemStyle={{ color: "#d1d5db" }}
-                                        formatter={(value: number) => [`${value} đơn`, "Số lượng"]}
+                                        formatter={(value) => [`${value} đơn`, "Số lượng"]}
                                     />
                                     <Bar dataKey="value" name="Đơn hàng" radius={[6, 6, 0, 0]}>
                                         {orderSourceData.map((_, i) => (
@@ -453,7 +453,7 @@ export default function AdminDashboard() {
                                         <Tooltip
                                             contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "12px", fontSize: "13px" }}
                                             itemStyle={{ color: "#d1d5db" }}
-                                            formatter={(value: number) => [formatCurrency(value), "Chi phí"]}
+                                            formatter={(value) => [formatCurrency(Number(value)), "Chi phí"]}
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
