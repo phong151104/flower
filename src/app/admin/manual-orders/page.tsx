@@ -203,7 +203,7 @@ export default function ManualOrdersPage() {
                 await createPaymentTx(editingId, paymentStatus, orderAmount, deposit, customerName.trim());
             }
         } else {
-            await addManualOrder({
+            const newId = await addManualOrder({
                 customerName: customerName.trim(), customerPhone: customerPhone.trim(),
                 customerAddress: customerAddress.trim(), description: description.trim(),
                 amount: orderAmount, source, note: note.trim(), orderDate, deliveryDate, deliveryTime,
@@ -211,9 +211,7 @@ export default function ManualOrdersPage() {
                 images,
             });
             if (paymentStatus === "paid" || (paymentStatus === "deposit" && deposit > 0)) {
-                const newest = orders[0];
-                const id = newest?.id || "new";
-                await createPaymentTx(id, paymentStatus, orderAmount, deposit, customerName.trim());
+                await createPaymentTx(newId, paymentStatus, orderAmount, deposit, customerName.trim());
             }
         }
         resetForm();
@@ -321,7 +319,7 @@ export default function ManualOrdersPage() {
     const getStatusInfo = (st: string) => statusOptions.find((s) => s.value === st) || statusOptions[0];
     const getPaymentInfo = (pt: string) => paymentOptions.find((p) => p.value === pt) || paymentOptions[0];
 
-    const totalPaid = orders.filter((o) => o.paymentStatus === "paid").reduce((s, o) => s + o.amount, 0);
+    const totalPaid = orders.filter((o) => o.paymentStatus === "paid" || o.paymentStatus === "cod").reduce((s, o) => s + o.amount, 0);
     const totalDeposits = orders.filter((o) => o.paymentStatus === "deposit").reduce((s, o) => s + o.depositAmount, 0);
 
     // ========== CALENDAR LOGIC ==========

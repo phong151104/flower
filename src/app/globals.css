@@ -31,24 +31,15 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-3 bg-forest-500 text-white font-medium rounded-full 
-           transition-all duration-300 ease-in-out
-           hover:bg-forest-600 hover:shadow-lg hover:-translate-y-0.5
-           active:translate-y-0 active:shadow-md;
+    @apply inline-flex items-center justify-center px-8 py-3 bg-forest-500 text-white font-medium rounded-full transition-all duration-300 ease-in-out hover:bg-forest-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center px-8 py-3 border-2 border-forest-500 text-forest-500 font-medium rounded-full 
-           transition-all duration-300 ease-in-out
-           hover:bg-forest-500 hover:text-white hover:shadow-lg hover:-translate-y-0.5
-           active:translate-y-0;
+    @apply inline-flex items-center justify-center px-8 py-3 border-2 border-forest-500 text-forest-500 font-medium rounded-full transition-all duration-300 ease-in-out hover:bg-forest-500 hover:text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
   }
 
   .btn-pink {
-    @apply inline-flex items-center justify-center px-8 py-3 bg-primary-500 text-white font-medium rounded-full 
-           transition-all duration-300 ease-in-out
-           hover:bg-primary-600 hover:shadow-lg hover:-translate-y-0.5
-           active:translate-y-0;
+    @apply inline-flex items-center justify-center px-8 py-3 bg-primary-500 text-white font-medium rounded-full transition-all duration-300 ease-in-out hover:bg-primary-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
   }
 
   .section-heading {
@@ -60,8 +51,7 @@
   }
 
   .card-hover {
-    @apply transition-all duration-300 ease-in-out
-           hover:shadow-pastel hover:-translate-y-1;
+    @apply transition-all duration-300 ease-in-out hover:shadow-pastel hover:-translate-y-1;
   }
 
   .glass-card {
@@ -77,15 +67,19 @@
   .animate-delay-100 {
     animation-delay: 100ms;
   }
+
   .animate-delay-200 {
     animation-delay: 200ms;
   }
+
   .animate-delay-300 {
     animation-delay: 300ms;
   }
+
   .animate-delay-400 {
     animation-delay: 400ms;
   }
+
   .animate-delay-500 {
     animation-delay: 500ms;
   }

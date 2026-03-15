@@ -83,7 +83,7 @@ interface AdminContextType {
 
     // Manual Orders
     manualOrders: ManualOrder[];
-    addManualOrder: (order: Omit<ManualOrder, "id" | "createdAt">) => Promise<void>;
+    addManualOrder: (order: Omit<ManualOrder, "id" | "createdAt">) => Promise<string>;
     updateManualOrder: (id: string, updates: Partial<Omit<ManualOrder, "id" | "createdAt">>) => Promise<void>;
     deleteManualOrder: (id: string) => Promise<void>;
 
@@ -536,6 +536,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
                     images: JSON.stringify(newOrder.images || []),
                 });
             }
+            return newOrder.id;
         },
         [dbReady]
     );

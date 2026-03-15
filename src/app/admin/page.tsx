@@ -11,7 +11,14 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-    const { products, transactions, orders, totalIncome, totalExpense, profit } = useAdmin();
+    const { products, transactions, orders, totalExpense, manualOrders } = useAdmin();
+
+    const realIncome = manualOrders
+        .filter((o) => o.paymentStatus === "paid" || o.paymentStatus === "cod")
+        .reduce((s, o) => s + o.amount, 0)
+        + manualOrders
+            .filter((o) => o.paymentStatus === "deposit")
+            .reduce((s, o) => s + o.depositAmount, 0);
 
     const formatCurrency = (n: number) =>
         new Intl.NumberFormat("vi-VN").format(n) + "₫";
@@ -19,7 +26,7 @@ export default function AdminDashboard() {
     const stats = [
         {
             label: "Tổng doanh thu",
-            value: formatCurrency(totalIncome),
+            value: formatCurrency(realIncome),
             icon: TrendingUp,
             color: "from-emerald-500 to-emerald-600",
             textColor: "text-emerald-400",
@@ -33,7 +40,7 @@ export default function AdminDashboard() {
         },
         {
             label: "Lợi nhuận",
-            value: formatCurrency(profit),
+            value: formatCurrency(realIncome - totalExpense),
             icon: ArrowUpRight,
             color: "from-blue-500 to-blue-600",
             textColor: "text-blue-400",
