@@ -138,7 +138,7 @@ export default function AdminDashboard() {
             .sort((a, b) => b.value - a.value);
     }, [transactions]);
 
-    const expenseColors = ["#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4"];
+    const expenseColors = ["#f43f5e", "#8b5cf6", "#0ea5e9", "#f97316", "#22c55e", "#e879f9", "#facc15", "#14b8a6"];
 
     // ===== Payment status =====
     const paymentStatusData = useMemo(() => {
@@ -433,18 +433,37 @@ export default function AdminDashboard() {
                     {expenseByCategoryData.length === 0 ? (
                         <p className="text-gray-500 text-sm py-12 text-center">Chưa có chi phí</p>
                     ) : (
-                        <div className="flex items-center gap-4">
-                            <div className="w-[180px] h-[180px] flex-shrink-0">
+                        <div>
+                            <div className="h-[320px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={expenseByCategoryData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={45}
-                                            outerRadius={80}
-                                            paddingAngle={3}
+                                            outerRadius={100}
+                                            paddingAngle={2}
                                             dataKey="value"
+                                            label={({ name, value, cx, cy, midAngle = 0, outerRadius: oR = 100, index = 0 }) => {
+                                                const RADIAN = Math.PI / 180;
+                                                const radius = oR + 28;
+                                                const x = (cx as number) + radius * Math.cos(-midAngle * RADIAN);
+                                                const y = (cy as number) + radius * Math.sin(-midAngle * RADIAN);
+                                                return (
+                                                    <text
+                                                        x={x}
+                                                        y={y}
+                                                        fill={expenseColors[index % expenseColors.length]}
+                                                        textAnchor={x > (cx as number) ? "start" : "end"}
+                                                        dominantBaseline="central"
+                                                        fontSize={12}
+                                                        fontWeight={600}
+                                                    >
+                                                        {name}: {formatShort(value)}
+                                                    </text>
+                                                );
+                                            }}
+                                            labelLine={{ stroke: "#6b7280", strokeWidth: 1 }}
                                         >
                                             {expenseByCategoryData.map((_, i) => (
                                                 <Cell key={i} fill={expenseColors[i % expenseColors.length]} />
@@ -457,17 +476,6 @@ export default function AdminDashboard() {
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
-                            </div>
-                            <div className="flex-1 space-y-2 max-h-[180px] overflow-y-auto">
-                                {expenseByCategoryData.map((cat, i) => (
-                                    <div key={i} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: expenseColors[i % expenseColors.length] }} />
-                                            <span className="text-sm text-gray-300 truncate">{cat.name}</span>
-                                        </div>
-                                        <span className="text-sm font-semibold text-gray-200 ml-2 flex-shrink-0">{formatShort(cat.value)}</span>
-                                    </div>
-                                ))}
                             </div>
                         </div>
                     )}
