@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -12,7 +12,7 @@
   }
 
   body {
-    @apply font-body text-gray-800 bg-cream-50;
+    @apply font-body text-gray-800 bg-navy-50;
   }
 
   h1,
@@ -25,25 +25,25 @@
   }
 
   ::selection {
-    @apply bg-primary-200 text-primary-800;
+    @apply bg-court-200 text-court-800;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-3 bg-forest-500 text-white font-medium rounded-full transition-all duration-300 ease-in-out hover:bg-forest-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md;
+    @apply inline-flex items-center justify-center px-6 py-3 bg-court-600 text-white font-medium rounded-full transition-all duration-300 ease-in-out hover:bg-court-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center px-8 py-3 border-2 border-forest-500 text-forest-500 font-medium rounded-full transition-all duration-300 ease-in-out hover:bg-forest-500 hover:text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
+    @apply inline-flex items-center justify-center px-6 py-3 border-2 border-court-600 text-court-600 font-medium rounded-full transition-all duration-300 ease-in-out hover:bg-court-600 hover:text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
   }
 
-  .btn-pink {
-    @apply inline-flex items-center justify-center px-8 py-3 bg-primary-500 text-white font-medium rounded-full transition-all duration-300 ease-in-out hover:bg-primary-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
+  .btn-ball {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-ball-400 text-navy-900 font-semibold rounded-full transition-all duration-300 ease-in-out hover:bg-ball-500 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
   }
 
   .section-heading {
-    @apply font-display text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900;
+    @apply font-display text-3xl md:text-4xl font-bold text-navy-900;
   }
 
   .section-subheading {
@@ -51,7 +51,7 @@
   }
 
   .card-hover {
-    @apply transition-all duration-300 ease-in-out hover:shadow-pastel hover:-translate-y-1;
+    @apply transition-all duration-300 ease-in-out hover:shadow-court hover:-translate-y-1;
   }
 
   .glass-card {
@@ -61,7 +61,7 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-court-600 to-court-400;
   }
 
   .animate-delay-100 {
@@ -75,14 +75,6 @@
   .animate-delay-300 {
     animation-delay: 300ms;
   }
-
-  .animate-delay-400 {
-    animation-delay: 400ms;
-  }
-
-  .animate-delay-500 {
-    animation-delay: 500ms;
-  }
 }
 
 /* Custom scrollbar */
@@ -91,13 +83,13 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-cream-100;
+  @apply bg-navy-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary-300 rounded-full;
+  @apply bg-court-300 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary-400;
+  @apply bg-court-400;
 }

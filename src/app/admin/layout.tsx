@@ -5,24 +5,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
-    Package,
+    Users,
     Wallet,
-    ShoppingCart,
     Menu,
     X,
-    Store,
     LogOut,
     Key,
-    ClipboardList,
+    Swords,
+    CalendarDays,
+    Trophy,
+    Megaphone,
+    Zap,
 } from "lucide-react";
 import AdminAuthGate from "@/components/admin/AdminAuthGate";
 
 const navItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/products", label: "Sản phẩm", icon: Package },
-    { href: "/admin/finance", label: "Thu chi", icon: Wallet },
-    { href: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
-    { href: "/admin/manual-orders", label: "Sổ đơn hàng", icon: ClipboardList },
+    { href: "/admin/players", label: "Thành viên", icon: Users },
+    { href: "/admin/matches", label: "Trận đấu", icon: Swords },
+    { href: "/admin/training", label: "Lịch tập", icon: CalendarDays },
+    { href: "/admin/tournaments", label: "Giải đấu", icon: Trophy },
+    { href: "/admin/finance", label: "Quỹ CLB", icon: Wallet },
+    { href: "/admin/announcements", label: "Thông báo", icon: Megaphone },
 ];
 
 const superAdminNavItems = [
@@ -62,11 +66,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {/* Logo */}
                     <div className="h-16 flex items-center justify-between px-6 border-b border-gray-800">
                         <Link href="/admin" className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center">
-                                <Store size={18} className="text-white" />
+                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                                <Zap size={18} className="text-yellow-300" />
                             </div>
                             <span className="font-bold text-lg">
-                                Bloom<span className="text-pink-400">ella</span>
+                                Pickle<span className="text-green-400">Club</span>
                             </span>
                         </Link>
                         <button
@@ -88,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     href={item.href}
                                     onClick={() => setSidebarOpen(false)}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${active
-                                        ? "bg-pink-500/15 text-pink-400 shadow-sm"
+                                        ? "bg-green-500/15 text-green-400 shadow-sm"
                                         : "text-gray-400 hover:text-white hover:bg-gray-800"
                                         }`}
                                 >
@@ -124,7 +128,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <div className="hidden lg:block">
                             <h1 className="text-sm text-gray-400">Xin chào,</h1>
                             <p className="font-semibold">
-                                {isSuperAdmin ? "Super Admin 👑" : "Chủ tiệm hoa 🌸"}
+                                {isSuperAdmin ? "Super Admin 👑" : "Quản lý CLB 🏓"}
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -132,12 +136,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 href="/"
                                 className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-1.5"
                             >
-                                <Store size={14} />
+                                <Zap size={14} />
                                 Về trang chính
                             </Link>
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${isSuperAdmin
                                 ? "bg-gradient-to-br from-amber-500 to-orange-500"
-                                : "bg-gradient-to-br from-pink-500 to-purple-500"
+                                : "bg-gradient-to-br from-green-500 to-emerald-600"
                                 }`}>
                                 {isSuperAdmin ? "👑" : "A"}
                             </div>

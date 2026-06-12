@@ -1,174 +1,38 @@
 import Link from "next/link";
-import {
-    MapPin,
-    Phone,
-    Mail,
-    Clock,
-    Facebook,
-    Instagram,
-    Heart,
-} from "lucide-react";
+import { Zap } from "lucide-react";
 
 export default function Footer() {
-    const currentYear = new Date().getFullYear();
-
     return (
-        <footer className="bg-gray-900 text-gray-300">
-            {/* Main Footer */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-                    {/* Brand */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-1">
-                            <span className="font-display text-2xl font-bold text-white">
-                                Bloom
-                            </span>
-                            <span className="font-script text-2xl text-primary-400">
-                                ella
-                            </span>
+        <footer className="bg-navy-900 text-gray-300 mt-16">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-court rounded-lg flex items-center justify-center">
+                            <Zap size={16} className="text-ball-300" />
                         </div>
-                        <p className="text-gray-400 leading-relaxed">
-                            Mang đến vẻ đẹp tự nhiên qua từng cánh hoa, tạo nên những khoảnh
-                            khắc đáng nhớ trong cuộc sống.
-                        </p>
-                        <div className="flex gap-4">
-                            <a
-                                href="https://www.facebook.com/bloomella102"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center
-                         transition-all duration-300 hover:-translate-y-1"
-                            >
-                                <Facebook size={18} />
-                            </a>
-                            <a
-                                href="https://www.instagram.com/bloomella.florist/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center
-                         transition-all duration-300 hover:-translate-y-1"
-                            >
-                                <Instagram size={18} />
-                            </a>
-                            <a
-                                href="https://www.tiktok.com/@bloomella.102"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center
-                         transition-all duration-300 hover:-translate-y-1"
-                            >
-                                <svg viewBox="0 0 448 512" fill="currentColor" className="w-[16px] h-[16px]">
-                                    <path d="M448 209.9a210.1 210.1 0 01-122.8-39.3v178.8A162.6 162.6 0 11185 188.3v89.9a74.6 74.6 0 1052.2 71.2V0h88a121 121 0 00122.8 121.3z" />
-                                </svg>
-                            </a>
-                            <a
-                                href="https://zalo.me/0342081925"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-full flex items-center justify-center
-                         transition-all duration-300 hover:-translate-y-1"
-                            >
-                                <svg viewBox="0 0 48 48" className="w-[18px] h-[18px]">
-                                    <path d="M24 2C11.85 2 2 10.95 2 22c0 5.2 2.15 9.95 5.7 13.55L5.5 44l9.15-4.8C17.4 40.35 20.6 41 24 41c12.15 0 22-8.5 22-19S36.15 2 24 2z" fill="currentColor" />
-                                    <text x="24" y="26" textAnchor="middle" fill="#1f2937" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">Z</text>
-                                </svg>
-                            </a>
-                        </div>
+                        <span className="font-display font-bold text-lg text-white">
+                            Pickle<span className="text-court-400">Club</span>
+                        </span>
                     </div>
 
-                    {/* Quick Links */}
-                    <div>
-                        <h3 className="font-display text-lg font-semibold text-white mb-6">
-                            Liên Kết
-                        </h3>
-                        <ul className="space-y-3">
-                            {[
-                                { name: "Trang chủ", href: "/" },
-                                { name: "Cửa hàng", href: "/shop" },
-                                { name: "Bộ sưu tập", href: "/gallery" },
-                                { name: "Giới thiệu", href: "/about" },
-                                { name: "Liên hệ", href: "/contact" },
-                            ].map((link) => (
-                                <li key={link.name}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-gray-400 hover:text-primary-400 transition-colors duration-300 hover:pl-2"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+                        <Link href="/rankings" className="hover:text-court-400 transition-colors">
+                            Bảng xếp hạng
+                        </Link>
+                        <Link href="/matches" className="hover:text-court-400 transition-colors">
+                            Trận đấu
+                        </Link>
+                        <Link href="/training" className="hover:text-court-400 transition-colors">
+                            Lịch tập
+                        </Link>
+                        <Link href="/tournaments" className="hover:text-court-400 transition-colors">
+                            Giải đấu
+                        </Link>
+                    </nav>
 
-                    {/* Services */}
-                    <div>
-                        <h3 className="font-display text-lg font-semibold text-white mb-6">
-                            Dịch Vụ
-                        </h3>
-                        <ul className="space-y-3">
-                            {[
-                                { name: "Hoa cưới", href: "/shop?category=wedding" },
-                                { name: "Hoa sinh nhật", href: "/shop?occasion=Sinh nhật" },
-                                { name: "Hoa khai trương", href: "/shop?occasion=Khai trương" },
-                                { name: "Hoa ngày lễ", href: "/shop?occasion=Ngày lễ" },
-                            ].map((service) => (
-                                <li key={service.name}>
-                                    <Link
-                                        href={service.href}
-                                        className="text-gray-400 hover:text-primary-400 transition-colors duration-300 hover:pl-2 block"
-                                    >
-                                        {service.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Contact */}
-                    <div>
-                        <h3 className="font-display text-lg font-semibold text-white mb-6">
-                            Liên Hệ
-                        </h3>
-                        <ul className="space-y-4">
-                            <li className="flex items-start gap-3">
-                                <MapPin size={18} className="text-primary-400 mt-1 flex-shrink-0" />
-                                <span className="text-gray-400">
-                                    44 Ng. 176 P. Lê Trọng Tấn, Khương Mai, Thanh Xuân, Hà Nội
-                                </span>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <Phone size={18} className="text-primary-400 flex-shrink-0" />
-                                <span className="text-gray-400">0888 229 955</span>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <Mail size={18} className="text-primary-400 flex-shrink-0" />
-                                <span className="text-gray-400">blommella102@gmail.com</span>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <Clock size={18} className="text-primary-400 mt-1 flex-shrink-0" />
-                                <span className="text-gray-400">
-                                    T2 - CN: 8:00 - 21:00
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            {/* Bottom Bar */}
-            <div className="border-t border-gray-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                        <p className="text-gray-500 text-sm">
-                            © {currentYear} Bloomella. Tất cả quyền được bảo lưu.
-                        </p>
-                        <p className="text-gray-500 text-sm flex items-center gap-1">
-                            Thiết kế với{" "}
-                            <Heart size={14} className="text-primary-400 fill-primary-400" />{" "}
-                            tại Việt Nam
-                        </p>
-                    </div>
+                    <p className="text-xs text-gray-500">
+                        © {new Date().getFullYear()} PickleClub — Chơi hết mình, xếp hạng công bằng 🏓
+                    </p>
                 </div>
             </div>
         </footer>

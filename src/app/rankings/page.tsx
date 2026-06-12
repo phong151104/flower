@@ -1,0 +1,27 @@
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import RankingTable from "@/components/club/RankingTable";
+
+export const metadata = {
+    title: "Bảng xếp hạng Elo — PickleClub",
+};
+
+export default function RankingsPage() {
+    return (
+        <>
+            <Navbar />
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 min-h-[60vh]">
+                <div className="mb-8 animate-fade-in">
+                    <h1 className="section-heading">Bảng xếp hạng Elo</h1>
+                    <p className="text-gray-500 mt-2">
+                        Xếp hạng theo Elo cá nhân — cần tối thiểu 12 trận để được xếp hạng chính thức.
+                    </p>
+                </div>
+                <div className="animate-slide-up">
+                    <RankingTable />
+                </div>
+            </main>
+            <Footer />
+        </>
+    );
+}

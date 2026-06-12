@@ -106,7 +106,7 @@ export default function AdminAuthGate({ children, onAuthStatusChange }: AdminAut
         return (
             <div className="min-h-screen bg-gray-950 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-10 h-10 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
                     <p className="text-gray-400 text-sm">Đang xác thực...</p>
                 </div>
             </div>
@@ -125,15 +125,15 @@ export default function AdminAuthGate({ children, onAuthStatusChange }: AdminAut
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <div className="w-16 h-16 bg-pink-500/15 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <ShieldCheck size={32} className="text-pink-400" />
+                        <div className="w-16 h-16 bg-green-500/15 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <ShieldCheck size={32} className="text-green-400" />
                         </div>
                         <h1 className="text-2xl font-bold text-white mb-2">
-                            Bloom<span className="text-pink-400">ella</span> Admin
+                            Pickle<span className="text-green-400">Club</span> Admin
                         </h1>
                         <p className="text-gray-400 text-sm">
                             {mode === "login"
-                                ? "Đăng nhập tài khoản chủ shop để tiếp tục"
+                                ? "Đăng nhập tài khoản quản lý CLB để tiếp tục"
                                 : "Nhập Access Key để truy cập admin"}
                         </p>
                     </div>
@@ -143,7 +143,7 @@ export default function AdminAuthGate({ children, onAuthStatusChange }: AdminAut
                         <button
                             onClick={() => { setMode("login"); setError(""); }}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${mode === "login"
-                                ? "bg-pink-500 text-white"
+                                ? "bg-green-600 text-white"
                                 : "bg-gray-800 text-gray-400 hover:text-white"
                                 }`}
                         >
@@ -152,7 +152,7 @@ export default function AdminAuthGate({ children, onAuthStatusChange }: AdminAut
                         <button
                             onClick={() => { setMode("key"); setError(""); }}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${mode === "key"
-                                ? "bg-pink-500 text-white"
+                                ? "bg-green-600 text-white"
                                 : "bg-gray-800 text-gray-400 hover:text-white"
                                 }`}
                         >
@@ -209,8 +209,8 @@ export default function AdminAuthGate({ children, onAuthStatusChange }: AdminAut
                                             setKeyInput(e.target.value.toUpperCase());
                                             setError("");
                                         }}
-                                        placeholder="VD: BLOOM-A3X9K2"
-                                        className="w-full pl-11 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white uppercase tracking-widest font-mono focus:outline-none focus:border-pink-500 transition-colors placeholder:text-gray-600 placeholder:tracking-normal placeholder:font-sans"
+                                        placeholder="VD: PICKLE-A3X9K2"
+                                        className="w-full pl-11 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white uppercase tracking-widest font-mono focus:outline-none focus:border-green-500 transition-colors placeholder:text-gray-600 placeholder:tracking-normal placeholder:font-sans"
                                         autoFocus
                                     />
                                 </div>
@@ -225,7 +225,7 @@ export default function AdminAuthGate({ children, onAuthStatusChange }: AdminAut
 
                             <button
                                 type="submit"
-                                className="w-full flex items-center justify-center gap-2 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-xl font-medium text-sm transition-colors"
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium text-sm transition-colors"
                             >
                                 <LogIn size={18} />
                                 Truy cập Admin
@@ -237,8 +237,8 @@ export default function AdminAuthGate({ children, onAuthStatusChange }: AdminAut
                     <div className="mt-6 pt-6 border-t border-gray-800">
                         <p className="text-xs text-gray-500 text-center">
                             {mode === "login"
-                                ? "Đăng nhập bằng tài khoản chủ shop để có quyền Super Admin."
-                                : "Liên hệ chủ shop để được cấp Access Key. Key có thời hạn và có thể bị thu hồi."}
+                                ? "Đăng nhập bằng tài khoản quản lý CLB để có quyền Super Admin."
+                                : "Liên hệ quản lý CLB để được cấp Access Key. Key có thời hạn và có thể bị thu hồi."}
                         </p>
                     </div>
                 </div>

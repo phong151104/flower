@@ -9,59 +9,52 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                primary: {
-                    50: "#FFF0F5",
-                    100: "#FFE0EB",
-                    200: "#FFC2D6",
-                    300: "#FFA3C2",
-                    400: "#F8B4C8",
-                    500: "#E91E63",
-                    600: "#C2185B",
-                    700: "#AD1457",
-                    800: "#880E4F",
-                    900: "#6A0F3B",
+                court: {
+                    50: "#F0FDF4",
+                    100: "#DCFCE7",
+                    200: "#BBF7D0",
+                    300: "#86EFAC",
+                    400: "#4ADE80",
+                    500: "#16A34A",
+                    600: "#15803D",
+                    700: "#166534",
+                    800: "#14532D",
+                    900: "#0F3D21",
                 },
-                cream: {
-                    50: "#FFFCF9",
-                    100: "#FFF8F0",
-                    200: "#FEF0E7",
-                    300: "#FDE8D8",
-                    400: "#F5E6D3",
-                    500: "#EDD9C7",
+                ball: {
+                    50: "#FEFCE8",
+                    100: "#FEF9C3",
+                    200: "#FEF08A",
+                    300: "#FDE047",
+                    400: "#FACC15",
+                    500: "#EAB308",
+                    600: "#CA8A04",
+                    700: "#A16207",
                 },
-                forest: {
-                    50: "#E8F5E9",
-                    100: "#C8E6C9",
-                    200: "#A5D6A7",
-                    300: "#81C784",
-                    400: "#66BB6A",
-                    500: "#1B4332",
-                    600: "#163A2B",
-                    700: "#113024",
-                    800: "#0C271D",
-                    900: "#071D16",
-                },
-                peach: {
-                    50: "#FFF5EE",
-                    100: "#FFEBD9",
-                    200: "#FFD7B3",
-                    300: "#FFC38D",
-                    400: "#FFAF67",
-                    500: "#FF9B41",
+                navy: {
+                    50: "#F8FAFC",
+                    100: "#F1F5F9",
+                    200: "#E2E8F0",
+                    300: "#CBD5E1",
+                    400: "#94A3B8",
+                    500: "#64748B",
+                    600: "#475569",
+                    700: "#334155",
+                    800: "#1E293B",
+                    900: "#0F172A",
                 },
             },
             fontFamily: {
-                display: ["Playfair Display", "Georgia", "serif"],
+                display: ["Be Vietnam Pro", "Montserrat", "system-ui", "sans-serif"],
                 body: ["Inter", "system-ui", "sans-serif"],
-                script: ["Dancing Script", "cursive"],
             },
             backgroundImage: {
-                "gradient-pastel":
-                    "linear-gradient(135deg, #FFF8F0 0%, #FFE0EB 50%, #FEF0E7 100%)",
-                "gradient-pink":
-                    "linear-gradient(135deg, #FFC2D6 0%, #F8B4C8 50%, #FFE0EB 100%)",
-                "gradient-warm":
-                    "linear-gradient(135deg, #FEF0E7 0%, #FDE8D8 50%, #FFF8F0 100%)",
+                "gradient-court":
+                    "linear-gradient(135deg, #15803D 0%, #16A34A 50%, #4ADE80 100%)",
+                "gradient-dark":
+                    "linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #166534 100%)",
+                "gradient-ball":
+                    "linear-gradient(135deg, #FACC15 0%, #EAB308 50%, #CA8A04 100%)",
             },
             borderRadius: {
                 "2xl": "1rem",
@@ -70,8 +63,7 @@ const config: Config = {
             },
             boxShadow: {
                 soft: "0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)",
-                pastel:
-                    "0 4px 20px -2px rgba(248, 180, 200, 0.3), 0 2px 10px -2px rgba(248, 180, 200, 0.2)",
+                court: "0 4px 20px -2px rgba(22, 163, 74, 0.25), 0 2px 10px -2px rgba(22, 163, 74, 0.15)",
                 card: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
             },
             animation: {

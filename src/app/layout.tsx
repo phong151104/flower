@@ -1,21 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import MessengerChat from "@/components/MessengerChat";
-import ComingSoonOverlay from "@/components/ComingSoonOverlay";
 
 export const metadata: Metadata = {
-    title: "Bloomella - Beautiful Flower Bouquets & Arrangements",
+    title: "PickleClub — CLB Pickleball | Xếp hạng Elo & Lịch tập",
     description:
-        "Discover our rich collection of fresh flowers, bouquets, and floral arrangements. Perfect for weddings, anniversaries, birthdays, and every special moment.",
-    keywords: [
-        "hoa tươi",
-        "bó hoa",
-        "flower shop",
-        "bouquet",
-        "wedding flowers",
-        "flower delivery",
-    ],
+        "Website nội bộ CLB Pickleball: bảng xếp hạng Elo, lịch sử trận đấu, lịch tập luyện, vote đi tập và quản lý giải đấu.",
+    keywords: ["pickleball", "elo", "câu lạc bộ", "xếp hạng", "giải đấu"],
 };
 
 export default function RootLayout({
@@ -27,10 +18,7 @@ export default function RootLayout({
         <html lang="vi">
             <body className="min-h-screen">
                 <Providers>{children}</Providers>
-                <MessengerChat />
-                <ComingSoonOverlay />
             </body>
         </html>
     );
 }
-
