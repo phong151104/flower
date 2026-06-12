@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import VotePanel from "@/components/club/VotePanel";
+import SessionForm from "@/components/club/SessionForm";
 import { useClub } from "@/context/ClubContext";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 
 export default function TrainingPage() {
     const { trainingSessions, isLoading } = useClub();
+    const [showForm, setShowForm] = useState(false);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -23,11 +26,17 @@ export default function TrainingPage() {
         <>
             <Navbar />
             <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10 min-h-[60vh]">
-                <div className="mb-8 animate-fade-in">
-                    <h1 className="section-heading">Lịch tập luyện</h1>
-                    <p className="text-gray-500 mt-2">
-                        Chọn tên của bạn và vote để mọi người biết ai đi tập.
-                    </p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-fade-in">
+                    <div>
+                        <h1 className="section-heading">Lịch tập luyện</h1>
+                        <p className="text-gray-500 mt-2">
+                            Chọn tên của bạn và vote để mọi người biết ai đi tập.
+                        </p>
+                    </div>
+                    <button onClick={() => setShowForm(true)} className="btn-primary gap-2">
+                        <Plus size={18} />
+                        Tạo buổi tập
+                    </button>
                 </div>
 
                 {isLoading ? (
@@ -66,6 +75,8 @@ export default function TrainingPage() {
                 )}
             </main>
             <Footer />
+
+            {showForm && <SessionForm onClose={() => setShowForm(false)} />}
         </>
     );
 }
