@@ -91,6 +91,29 @@ create table training_votes (
   unique (session_id, player_id)  -- upsert khi đổi vote
 );
 
+-- Chi phí của từng buổi tập (tiền sân, tiền nước, tiền bóng...).
+-- Tổng chi phí sẽ tự chia đều cho những người vote "đi tập" của buổi đó.
+create table session_costs (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references training_sessions(id) on delete cascade,
+  label text not null,
+  amount numeric not null check (amount >= 0),
+  category text not null default 'khac' check (category in ('tien_san','tien_nuoc','tien_bong','khac')),
+  created_at timestamptz not null default now()
+);
+create index idx_session_costs_session on session_costs(session_id);
+
+-- Trạng thái đóng tiền của từng người cho mỗi buổi tập.
+-- Có row + paid=true nghĩa là người đó đã đóng phần chia của mình buổi đó.
+create table session_payments (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references training_sessions(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  paid boolean not null default true,
+  paid_at timestamptz not null default now(),
+  unique (session_id, player_id)  -- upsert khi đổi trạng thái
+);
+
 create table transactions (
   id text primary key,
   type text not null check (type in ('income','expense')),
@@ -120,6 +143,8 @@ alter table tournament_teams enable row level security;
 alter table matches enable row level security;
 alter table training_sessions enable row level security;
 alter table training_votes enable row level security;
+alter table session_costs enable row level security;
+alter table session_payments enable row level security;
 alter table transactions enable row level security;
 alter table announcements enable row level security;
 
@@ -129,6 +154,8 @@ create policy "anon full access" on tournament_teams for all using (true) with c
 create policy "anon full access" on matches for all using (true) with check (true);
 create policy "anon full access" on training_sessions for all using (true) with check (true);
 create policy "anon full access" on training_votes for all using (true) with check (true);
+create policy "anon full access" on session_costs for all using (true) with check (true);
+create policy "anon full access" on session_payments for all using (true) with check (true);
 create policy "anon full access" on transactions for all using (true) with check (true);
 create policy "anon full access" on announcements for all using (true) with check (true);
 
@@ -136,3 +163,5 @@ create policy "anon full access" on announcements for all using (true) with chec
 alter publication supabase_realtime add table players;
 alter publication supabase_realtime add table matches;
 alter publication supabase_realtime add table training_votes;
+alter publication supabase_realtime add table session_costs;
+alter publication supabase_realtime add table session_payments;

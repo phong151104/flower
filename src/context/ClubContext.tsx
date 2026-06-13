@@ -9,6 +9,8 @@ import type {
     MatchRound,
     TrainingSession,
     TrainingVote,
+    SessionCost,
+    SessionPayment,
     Tournament,
     TournamentTeam,
     Transaction,
@@ -61,6 +63,14 @@ interface ClubContextType {
     deleteTrainingSession: (id: string) => Promise<void>;
     trainingVotes: TrainingVote[];
     voteTraining: (sessionId: string, playerId: string, status: "yes" | "no") => Promise<void>;
+
+    // Chi phí buổi tập + chia tiền
+    sessionCosts: SessionCost[];
+    addSessionCost: (cost: Omit<SessionCost, "id" | "createdAt">) => Promise<void>;
+    deleteSessionCost: (id: string) => Promise<void>;
+    sessionPayments: SessionPayment[];
+    /** Đánh dấu một người đã/chưa đóng tiền cho một buổi (upsert). */
+    setSessionPayment: (sessionId: string, playerId: string, paid: boolean) => Promise<void>;
 
     // Tournaments
     tournaments: Tournament[];
@@ -209,6 +219,27 @@ function dbToVote(row: Record<string, unknown>): TrainingVote {
     };
 }
 
+function dbToSessionCost(row: Record<string, unknown>): SessionCost {
+    return {
+        id: row.id as string,
+        sessionId: row.session_id as string,
+        label: row.label as string,
+        amount: Number(row.amount),
+        category: (row.category as SessionCost["category"]) || "khac",
+        createdAt: row.created_at as string,
+    };
+}
+
+function dbToSessionPayment(row: Record<string, unknown>): SessionPayment {
+    return {
+        id: row.id as string,
+        sessionId: row.session_id as string,
+        playerId: row.player_id as string,
+        paid: row.paid !== false,
+        paidAt: row.paid_at as string,
+    };
+}
+
 function dbToTournament(row: Record<string, unknown>): Tournament {
     return {
         id: row.id as string,
@@ -262,6 +293,8 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     const [matches, setMatches] = useState<Match[]>([]);
     const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>([]);
     const [trainingVotes, setTrainingVotes] = useState<TrainingVote[]>([]);
+    const [sessionCosts, setSessionCosts] = useState<SessionCost[]>([]);
+    const [sessionPayments, setSessionPayments] = useState<SessionPayment[]>([]);
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [tournamentTeams, setTournamentTeams] = useState<TournamentTeam[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -281,6 +314,8 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 matchesRes,
                 sessionsRes,
                 votesRes,
+                costsRes,
+                paymentsRes,
                 tournamentsRes,
                 teamsRes,
                 txRes,
@@ -290,6 +325,8 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 supabase.from("matches").select("*").order("played_at", { ascending: false }),
                 supabase.from("training_sessions").select("*").order("session_date", { ascending: false }),
                 supabase.from("training_votes").select("*"),
+                supabase.from("session_costs").select("*"),
+                supabase.from("session_payments").select("*"),
                 supabase.from("tournaments").select("*").order("tournament_date", { ascending: false }),
                 supabase.from("tournament_teams").select("*"),
                 supabase.from("transactions").select("*").order("date", { ascending: false }),
@@ -300,6 +337,8 @@ export function ClubProvider({ children }: { children: ReactNode }) {
             if (matchesRes.data) setMatches(matchesRes.data.map(dbToMatch));
             if (sessionsRes.data) setTrainingSessions(sessionsRes.data.map(dbToSession));
             if (votesRes.data) setTrainingVotes(votesRes.data.map(dbToVote));
+            if (costsRes.data) setSessionCosts(costsRes.data.map(dbToSessionCost));
+            if (paymentsRes.data) setSessionPayments(paymentsRes.data.map(dbToSessionPayment));
             if (tournamentsRes.data) setTournaments(tournamentsRes.data.map(dbToTournament));
             if (teamsRes.data) setTournamentTeams(teamsRes.data.map(dbToTeam));
             if (txRes.data) setTransactions(txRes.data.map(dbToTransaction));
@@ -362,6 +401,35 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 } else if (payload.eventType === "DELETE") {
                     const id = (payload.old as Record<string, unknown>).id as string;
                     setTrainingVotes((prev) => prev.filter((x) => x.id !== id));
+                }
+            })
+            .on("postgres_changes", { event: "*", schema: "public", table: "session_costs" }, (payload) => {
+                if (payload.eventType === "INSERT") {
+                    const c = dbToSessionCost(payload.new as Record<string, unknown>);
+                    setSessionCosts((prev) => (prev.some((x) => x.id === c.id) ? prev : [...prev, c]));
+                } else if (payload.eventType === "UPDATE") {
+                    const c = dbToSessionCost(payload.new as Record<string, unknown>);
+                    setSessionCosts((prev) => prev.map((x) => (x.id === c.id ? c : x)));
+                } else if (payload.eventType === "DELETE") {
+                    const id = (payload.old as Record<string, unknown>).id as string;
+                    setSessionCosts((prev) => prev.filter((x) => x.id !== id));
+                }
+            })
+            .on("postgres_changes", { event: "*", schema: "public", table: "session_payments" }, (payload) => {
+                if (payload.eventType === "INSERT") {
+                    const p = dbToSessionPayment(payload.new as Record<string, unknown>);
+                    setSessionPayments((prev) => {
+                        const filtered = prev.filter(
+                            (x) => !(x.sessionId === p.sessionId && x.playerId === p.playerId)
+                        );
+                        return [...filtered, p];
+                    });
+                } else if (payload.eventType === "UPDATE") {
+                    const p = dbToSessionPayment(payload.new as Record<string, unknown>);
+                    setSessionPayments((prev) => prev.map((x) => (x.id === p.id ? p : x)));
+                } else if (payload.eventType === "DELETE") {
+                    const id = (payload.old as Record<string, unknown>).id as string;
+                    setSessionPayments((prev) => prev.filter((x) => x.id !== id));
                 }
             })
             .subscribe();
@@ -657,6 +725,69 @@ export function ClubProvider({ children }: { children: ReactNode }) {
         [dbReady]
     );
 
+    // ---- Chi phí buổi tập ----
+    const addSessionCost = useCallback(
+        async (cost: Omit<SessionCost, "id" | "createdAt">) => {
+            const newCost: SessionCost = {
+                ...cost,
+                id: crypto.randomUUID(),
+                createdAt: new Date().toISOString(),
+            };
+            setSessionCosts((prev) => [...prev, newCost]);
+            if (dbReady && supabase) {
+                const { error } = await supabase.from("session_costs").insert({
+                    id: newCost.id,
+                    session_id: newCost.sessionId,
+                    label: newCost.label,
+                    amount: newCost.amount,
+                    category: newCost.category,
+                });
+                if (error) console.error("Session cost insert failed:", error.message);
+            }
+        },
+        [dbReady]
+    );
+
+    const deleteSessionCost = useCallback(
+        async (id: string) => {
+            setSessionCosts((prev) => prev.filter((c) => c.id !== id));
+            if (dbReady && supabase) {
+                await supabase.from("session_costs").delete().eq("id", id);
+            }
+        },
+        [dbReady]
+    );
+
+    const setSessionPayment = useCallback(
+        async (sessionId: string, playerId: string, paid: boolean) => {
+            const now = new Date().toISOString();
+            setSessionPayments((prev) => {
+                const existing = prev.find(
+                    (p) => p.sessionId === sessionId && p.playerId === playerId
+                );
+                if (existing) {
+                    return prev.map((p) =>
+                        p.id === existing.id ? { ...p, paid, paidAt: now } : p
+                    );
+                }
+                return [
+                    ...prev,
+                    { id: crypto.randomUUID(), sessionId, playerId, paid, paidAt: now },
+                ];
+            });
+            if (dbReady && supabase) {
+                const { error } = await supabase
+                    .from("session_payments")
+                    .upsert(
+                        { session_id: sessionId, player_id: playerId, paid, paid_at: now },
+                        { onConflict: "session_id,player_id" }
+                    );
+                if (error) console.error("Session payment failed:", error.message);
+            }
+        },
+        [dbReady]
+    );
+
     // ---- Tournaments ----
     const addTournament = useCallback(
         async (t: Omit<Tournament, "id" | "createdAt">) => {
@@ -864,6 +995,11 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 deleteTrainingSession,
                 trainingVotes,
                 voteTraining,
+                sessionCosts,
+                addSessionCost,
+                deleteSessionCost,
+                sessionPayments,
+                setSessionPayment,
                 tournaments,
                 addTournament,
                 updateTournament,

@@ -90,6 +90,27 @@ export interface TournamentTeam {
     createdAt: string;
 }
 
+export type SessionCostCategory = "tien_san" | "tien_nuoc" | "tien_bong" | "khac";
+
+/** Một khoản chi của buổi tập (tiền sân, tiền nước, tiền bóng...). */
+export interface SessionCost {
+    id: string;
+    sessionId: string;
+    label: string;
+    amount: number;
+    category: SessionCostCategory;
+    createdAt: string;
+}
+
+/** Trạng thái đóng tiền của một người cho một buổi tập. */
+export interface SessionPayment {
+    id: string;
+    sessionId: string;
+    playerId: string;
+    paid: boolean;
+    paidAt: string;
+}
+
 export type TransactionCategory = "tien_san" | "bong" | "quy_thang" | "khac";
 
 export interface Transaction {

@@ -11,6 +11,7 @@ const navLinks = [
     { href: "/matches", label: "Trận đấu" },
     { href: "/training", label: "Lịch tập" },
     { href: "/tournaments", label: "Giải đấu" },
+    { href: "/quy", label: "Quỹ" },
 ];
 
 export default function Navbar() {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useClub } from "@/context/ClubContext";
 import type { TrainingSession } from "@/types/club";
 import PlayerSelect from "@/components/club/PlayerSelect";
+import SessionCostPanel from "@/components/club/SessionCostPanel";
 import { Check, X as XIcon, MapPin, Clock } from "lucide-react";
 
 function formatDate(dateStr: string) {
@@ -157,6 +158,9 @@ export default function VotePanel({ session }: { session: TrainingSession }) {
                     )}
                 </div>
             )}
+
+            {/* Chi phí buổi tập + chia tiền */}
+            <SessionCostPanel session={session} />
         </div>
     );
 }
