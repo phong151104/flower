@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useClub } from "@/context/ClubContext";
 import type { TrainingSession } from "@/types/club";
 import PlayerSelect from "@/components/club/PlayerSelect";
 import SessionCostPanel from "@/components/club/SessionCostPanel";
-import { Check, X as XIcon, MapPin, Clock } from "lucide-react";
+import { Check, X as XIcon, MapPin, Clock, Sparkles } from "lucide-react";
 
 function formatDate(dateStr: string) {
     const d = new Date(dateStr + "T00:00:00");
@@ -72,9 +73,20 @@ export default function VotePanel({ session }: { session: TrainingSession }) {
                         <p className="text-sm text-gray-400 mt-2 italic">{session.note}</p>
                     )}
                 </div>
-                <div className="text-center shrink-0 bg-court-50 rounded-2xl px-4 py-2">
-                    <p className="text-2xl font-bold text-court-600">{yesVotes.length}</p>
-                    <p className="text-[11px] text-gray-500">người đi</p>
+                <div className="flex flex-row sm:flex-col items-center gap-2 shrink-0">
+                    <div className="text-center bg-court-50 rounded-2xl px-4 py-2">
+                        <p className="text-2xl font-bold text-court-600">{yesVotes.length}</p>
+                        <p className="text-[11px] text-gray-500">người đi</p>
+                    </div>
+                    {yesVotes.length >= 4 && (
+                        <Link
+                            href={`/lineup?session=${session.id}`}
+                            className="flex items-center gap-1 text-xs font-medium text-ball-700 bg-ball-100 hover:bg-ball-200 px-2.5 py-1.5 rounded-full transition-colors whitespace-nowrap"
+                        >
+                            <Sparkles size={13} />
+                            Xếp đội
+                        </Link>
+                    )}
                 </div>
             </div>
 

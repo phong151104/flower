@@ -10,6 +10,7 @@ const navLinks = [
     { href: "/rankings", label: "Bảng xếp hạng" },
     { href: "/matches", label: "Trận đấu" },
     { href: "/training", label: "Lịch tập" },
+    { href: "/lineup", label: "Xếp đội" },
     { href: "/tournaments", label: "Giải đấu" },
     { href: "/quy", label: "Quỹ" },
 ];
