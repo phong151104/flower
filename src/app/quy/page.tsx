@@ -11,6 +11,7 @@ import {
     getSessionTotal,
     getAllDebts,
     formatVND,
+    type PlayerDebt,
 } from "@/lib/finance";
 import type { TransactionCategory } from "@/types/club";
 import {
@@ -23,6 +24,8 @@ import {
     CalendarDays,
     PiggyBank,
     X,
+    Check,
+    Users,
 } from "lucide-react";
 
 const FUND_CATEGORY_LABEL: Record<Exclude<TransactionCategory, "tien_san">, string> = {
@@ -46,6 +49,7 @@ export default function PublicFinancePage() {
         trainingVotes,
         sessionCosts,
         sessionPayments,
+        setSessionPayment,
         transactions,
         balance,
         addTransaction,
@@ -78,6 +82,17 @@ export default function PublicFinancePage() {
         [players, trainingSessions, sessionCosts, trainingVotes, sessionPayments]
     );
     const playerName = (id: string) => players.find((p) => p.id === id)?.name || "(đã xóa)";
+
+    const debtors = debts.filter((d) => d.outstanding > 0.5);
+    const settled = debts.filter((d) => d.outstanding <= 0.5);
+    const totalOutstanding = debtors.reduce((s, d) => s + d.outstanding, 0);
+
+    // Đánh dấu đã đóng cho tất cả buổi còn nợ của một người
+    const markAllPaid = async (d: PlayerDebt) => {
+        for (const sid of d.unpaidSessions) {
+            await setSessionPayment(sid, d.playerId, true);
+        }
+    };
 
     // Các buổi để ghi chi phí: có chi phí HOẶC có người vote đi, sắp theo ngày mới nhất
     const relevantSessions = useMemo(() => {
@@ -177,16 +192,93 @@ export default function PublicFinancePage() {
 
                 {/* Dashboard công nợ */}
                 <section className="mb-10">
-                    <h2 className="font-display text-xl font-bold text-navy-900 flex items-center gap-2 mb-4">
-                        <Wallet size={20} className="text-ball-500" />
-                        Công nợ thành viên
-                    </h2>
+                    <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                        <h2 className="font-display text-xl font-bold text-navy-900 flex items-center gap-2">
+                            <Wallet size={20} className="text-ball-500" />
+                            Công nợ thành viên
+                        </h2>
+                        {debts.length > 0 && (
+                            <span className="text-sm text-gray-500">
+                                {debtors.length > 0 ? (
+                                    <>
+                                        <span className="font-semibold text-red-500">
+                                            {debtors.length} người
+                                        </span>{" "}
+                                        còn thiếu{" "}
+                                        <span className="font-semibold text-red-500">
+                                            {formatVND(totalOutstanding)}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span className="font-semibold text-court-600">
+                                        Mọi người đã đóng đủ 🎉
+                                    </span>
+                                )}
+                            </span>
+                        )}
+                    </div>
+
                     {debts.length === 0 ? (
                         <div className="bg-white rounded-2xl shadow-card p-8 text-center text-gray-400 text-sm">
                             Chưa có buổi nào ghi chi phí. Thêm chi phí ở mục bên dưới để bắt đầu chia
                             tiền.
                         </div>
                     ) : (
+                      <>
+                        {/* Thẻ nổi bật: ai còn thiếu bao nhiêu */}
+                        {debtors.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                                {debtors.map((d) => (
+                                    <div
+                                        key={d.playerId}
+                                        className="bg-white rounded-2xl shadow-card border-l-4 border-red-400 p-4 flex flex-col"
+                                    >
+                                        <div className="flex items-start justify-between gap-2">
+                                            <p className="font-bold text-navy-900">
+                                                {playerName(d.playerId)}
+                                            </p>
+                                            <span className="text-[11px] bg-red-50 text-red-500 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                {d.unpaidSessions.length}/{d.sessionCount} buổi
+                                            </span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-red-500 mt-1.5 leading-none">
+                                            {formatVND(d.outstanding)}
+                                        </p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            chưa đóng · đã đóng {formatVND(d.paid)}
+                                        </p>
+                                        <button
+                                            onClick={() => markAllPaid(d)}
+                                            className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 bg-court-600 hover:bg-court-700 text-white rounded-xl text-sm font-medium transition-colors"
+                                        >
+                                            <Check size={15} />
+                                            Đánh dấu đã đóng
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Người đã đóng đủ */}
+                        {settled.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+                                <span className="text-gray-400 flex items-center gap-1.5">
+                                    <Users size={15} />
+                                    Đã đóng đủ:
+                                </span>
+                                {settled.map((d) => (
+                                    <span
+                                        key={d.playerId}
+                                        className="flex items-center gap-1 px-2.5 py-1 bg-court-100 text-court-800 rounded-full text-xs font-medium"
+                                    >
+                                        <Check size={12} />
+                                        {playerName(d.playerId)}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Bảng chi tiết */}
                         <div className="bg-white rounded-2xl shadow-card overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
@@ -251,6 +343,7 @@ export default function PublicFinancePage() {
                                 </table>
                             </div>
                         </div>
+                      </>
                     )}
                 </section>
 
