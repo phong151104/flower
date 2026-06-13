@@ -67,6 +67,10 @@ interface ClubContextType {
     // Chi phí buổi tập + chia tiền
     sessionCosts: SessionCost[];
     addSessionCost: (cost: Omit<SessionCost, "id" | "createdAt">) => Promise<void>;
+    updateSessionCost: (
+        id: string,
+        updates: Partial<Omit<SessionCost, "id" | "sessionId" | "createdAt">>
+    ) => Promise<void>;
     deleteSessionCost: (id: string) => Promise<void>;
     sessionPayments: SessionPayment[];
     /** Đánh dấu một người đã/chưa đóng tiền cho một buổi (upsert). */
@@ -748,6 +752,24 @@ export function ClubProvider({ children }: { children: ReactNode }) {
         [dbReady]
     );
 
+    const updateSessionCost = useCallback(
+        async (
+            id: string,
+            updates: Partial<Omit<SessionCost, "id" | "sessionId" | "createdAt">>
+        ) => {
+            setSessionCosts((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+            if (dbReady && supabase) {
+                const row: Record<string, unknown> = {};
+                if (updates.label !== undefined) row.label = updates.label;
+                if (updates.amount !== undefined) row.amount = updates.amount;
+                if (updates.category !== undefined) row.category = updates.category;
+                const { error } = await supabase.from("session_costs").update(row).eq("id", id);
+                if (error) console.error("Session cost update failed:", error.message);
+            }
+        },
+        [dbReady]
+    );
+
     const deleteSessionCost = useCallback(
         async (id: string) => {
             setSessionCosts((prev) => prev.filter((c) => c.id !== id));
@@ -997,6 +1019,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 voteTraining,
                 sessionCosts,
                 addSessionCost,
+                updateSessionCost,
                 deleteSessionCost,
                 sessionPayments,
                 setSessionPayment,

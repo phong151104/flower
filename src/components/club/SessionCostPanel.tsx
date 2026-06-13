@@ -9,7 +9,7 @@ import {
     SESSION_COST_LABEL,
     SESSION_COST_ICON,
 } from "@/lib/finance";
-import { Wallet, Plus, Trash2, Check, ChevronDown, ChevronUp, Receipt } from "lucide-react";
+import { Wallet, Plus, Trash2, Check, ChevronDown, ChevronUp, Receipt, Pencil, X } from "lucide-react";
 
 const CATEGORIES: SessionCostCategory[] = ["tien_san", "tien_nuoc", "tien_bong", "khac"];
 
@@ -26,6 +26,7 @@ export default function SessionCostPanel({
         sessionCosts,
         sessionPayments,
         addSessionCost,
+        updateSessionCost,
         deleteSessionCost,
         setSessionPayment,
     } = useClub();
@@ -36,6 +37,24 @@ export default function SessionCostPanel({
     const [label, setLabel] = useState("");
     const [amount, setAmount] = useState("");
     const [error, setError] = useState("");
+
+    // Sửa chi phí inline
+    const [editingId, setEditingId] = useState("");
+    const [editLabel, setEditLabel] = useState("");
+    const [editAmount, setEditAmount] = useState("");
+
+    const startEdit = (id: string, curLabel: string, curAmount: number) => {
+        setEditingId(id);
+        setEditLabel(curLabel);
+        setEditAmount(String(curAmount));
+    };
+
+    const saveEdit = async () => {
+        const amt = parseInt(editAmount.replace(/\D/g, ""), 10);
+        if (isNaN(amt) || amt < 0) return;
+        await updateSessionCost(editingId, { label: editLabel.trim() || "Chi phí", amount: amt });
+        setEditingId("");
+    };
 
     const costs = sessionCosts.filter((c) => c.sessionId === session.id);
     const fin = getSessionFinance(session.id, sessionCosts, trainingVotes, sessionPayments);
@@ -98,29 +117,82 @@ export default function SessionCostPanel({
                                 Chưa có chi phí nào cho buổi này.
                             </p>
                         ) : (
-                            costs.map((c) => (
-                                <div
-                                    key={c.id}
-                                    className="flex items-center justify-between bg-navy-50 rounded-xl px-3 py-2 text-sm"
-                                >
-                                    <span className="flex items-center gap-2 text-navy-900">
+                            costs.map((c) =>
+                                editingId === c.id ? (
+                                    <div
+                                        key={c.id}
+                                        className="flex items-center gap-2 bg-white border border-court-300 rounded-xl px-3 py-2 text-sm"
+                                    >
                                         <span>{SESSION_COST_ICON[c.category]}</span>
-                                        {c.label}
-                                    </span>
-                                    <span className="flex items-center gap-3">
-                                        <span className="font-mono font-medium text-navy-900">
-                                            {formatVND(c.amount)}
-                                        </span>
+                                        <input
+                                            type="text"
+                                            value={editLabel}
+                                            onChange={(e) => setEditLabel(e.target.value)}
+                                            className="flex-1 min-w-0 px-2 py-1 bg-white border border-navy-200 rounded-lg text-sm focus:outline-none focus:border-court-500"
+                                        />
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={editAmount}
+                                            onChange={(e) => setEditAmount(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                                            className="w-28 px-2 py-1 bg-white border border-navy-200 rounded-lg text-sm text-right focus:outline-none focus:border-court-500"
+                                            autoFocus
+                                        />
                                         <button
-                                            onClick={() => deleteSessionCost(c.id)}
-                                            className="text-gray-300 hover:text-red-500 transition-colors"
-                                            aria-label="Xóa chi phí"
+                                            onClick={saveEdit}
+                                            className="text-court-600 hover:text-court-700"
+                                            aria-label="Lưu"
                                         >
-                                            <Trash2 size={15} />
+                                            <Check size={17} />
                                         </button>
-                                    </span>
-                                </div>
-                            ))
+                                        <button
+                                            onClick={() => setEditingId("")}
+                                            className="text-gray-400 hover:text-navy-900"
+                                            aria-label="Hủy"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div
+                                        key={c.id}
+                                        className="flex items-center justify-between bg-navy-50 rounded-xl px-3 py-2 text-sm"
+                                    >
+                                        <span className="flex items-center gap-2 text-navy-900">
+                                            <span>{SESSION_COST_ICON[c.category]}</span>
+                                            {c.label}
+                                        </span>
+                                        <span className="flex items-center gap-2">
+                                            <button
+                                                onClick={() =>
+                                                    startEdit(c.id, c.label, c.amount)
+                                                }
+                                                className="font-mono font-medium text-navy-900 hover:text-court-600 hover:underline decoration-dotted underline-offset-2"
+                                                title="Bấm để sửa"
+                                            >
+                                                {formatVND(c.amount)}
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    startEdit(c.id, c.label, c.amount)
+                                                }
+                                                className="text-gray-300 hover:text-court-600 transition-colors"
+                                                aria-label="Sửa chi phí"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => deleteSessionCost(c.id)}
+                                                className="text-gray-300 hover:text-red-500 transition-colors"
+                                                aria-label="Xóa chi phí"
+                                            >
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </span>
+                                    </div>
+                                )
+                            )
                         )}
                     </div>
 
