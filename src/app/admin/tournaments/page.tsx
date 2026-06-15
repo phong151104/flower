@@ -41,6 +41,8 @@ export default function AdminTournamentsPage() {
     const [p2, setP2] = useState("");
     const [group, setGroup] = useState<"A" | "B">("A");
     const [teamError, setTeamError] = useState("");
+    // Cho phép 1 người ở nhiều đội (vd: gộp người từ bảng khác khi có người nghỉ)
+    const [allowDup, setAllowDup] = useState(false);
 
     const managing = tournaments.find((t) => t.id === managingId);
     const managingTeams = tournamentTeams.filter((t) => t.tournamentId === managingId);
@@ -72,10 +74,14 @@ export default function AdminTournamentsPage() {
             setTeamError("Chọn 2 người chơi khác nhau");
             return;
         }
-        const usedPlayerIds = managingTeams.flatMap((t) => [t.player1Id, t.player2Id]);
-        if (usedPlayerIds.includes(p1) || usedPlayerIds.includes(p2)) {
-            setTeamError("Người chơi đã thuộc đội khác trong giải này");
-            return;
+        if (!allowDup) {
+            const usedPlayerIds = managingTeams.flatMap((t) => [t.player1Id, t.player2Id]);
+            if (usedPlayerIds.includes(p1) || usedPlayerIds.includes(p2)) {
+                setTeamError(
+                    'Người chơi đã thuộc đội khác trong giải này. Tích "Cho phép trùng người" nếu muốn gộp.'
+                );
+                return;
+            }
         }
         const groupCount = managingTeams.filter((t) => t.groupName === group).length;
         if (groupCount >= 3) {
@@ -326,13 +332,17 @@ export default function AdminTournamentsPage() {
                                         <PlayerSelect
                                             value={p1}
                                             onChange={setP1}
-                                            excludeIds={[
-                                                p2,
-                                                ...managingTeams.flatMap((t) => [
-                                                    t.player1Id,
-                                                    t.player2Id,
-                                                ]),
-                                            ].filter(Boolean)}
+                                            excludeIds={
+                                                allowDup
+                                                    ? [p2].filter(Boolean)
+                                                    : [
+                                                          p2,
+                                                          ...managingTeams.flatMap((t) => [
+                                                              t.player1Id,
+                                                              t.player2Id,
+                                                          ]),
+                                                      ].filter(Boolean)
+                                            }
                                             placeholder="Người 1"
                                             className="!bg-gray-800 !border-gray-700 !text-white"
                                         />
@@ -341,13 +351,17 @@ export default function AdminTournamentsPage() {
                                         <PlayerSelect
                                             value={p2}
                                             onChange={setP2}
-                                            excludeIds={[
-                                                p1,
-                                                ...managingTeams.flatMap((t) => [
-                                                    t.player1Id,
-                                                    t.player2Id,
-                                                ]),
-                                            ].filter(Boolean)}
+                                            excludeIds={
+                                                allowDup
+                                                    ? [p1].filter(Boolean)
+                                                    : [
+                                                          p1,
+                                                          ...managingTeams.flatMap((t) => [
+                                                              t.player1Id,
+                                                              t.player2Id,
+                                                          ]),
+                                                      ].filter(Boolean)
+                                            }
                                             placeholder="Người 2"
                                             className="!bg-gray-800 !border-gray-700 !text-white"
                                         />
@@ -370,6 +384,15 @@ export default function AdminTournamentsPage() {
                                         <option value="B">Bảng B</option>
                                     </select>
                                 </div>
+                                <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={allowDup}
+                                        onChange={(e) => setAllowDup(e.target.checked)}
+                                        className="w-4 h-4 rounded border-gray-600 bg-gray-800 accent-green-600"
+                                    />
+                                    Cho phép trùng người (người đã ở đội khác trong giải)
+                                </label>
                                 {teamError && <p className="text-red-400 text-sm">{teamError}</p>}
                                 <button
                                     type="submit"
