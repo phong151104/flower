@@ -26,6 +26,8 @@ import {
     X,
     Check,
     Users,
+    Pencil,
+    Trash2,
 } from "lucide-react";
 
 const FUND_CATEGORY_LABEL: Record<Exclude<TransactionCategory, "tien_san">, string> = {
@@ -53,6 +55,8 @@ export default function PublicFinancePage() {
         transactions,
         balance,
         addTransaction,
+        updateTransaction,
+        deleteTransaction,
         isLoading,
     } = useClub();
 
@@ -92,6 +96,27 @@ export default function PublicFinancePage() {
         for (const sid of d.unpaidSessions) {
             await setSessionPayment(sid, d.playerId, true);
         }
+    };
+
+    // Sửa giao dịch quỹ inline
+    const [editTxId, setEditTxId] = useState("");
+    const [editTxDesc, setEditTxDesc] = useState("");
+    const [editTxAmount, setEditTxAmount] = useState("");
+
+    const startEditTx = (id: string, desc: string, amount: number) => {
+        setEditTxId(id);
+        setEditTxDesc(desc);
+        setEditTxAmount(String(amount));
+    };
+
+    const saveEditTx = async () => {
+        const amt = parseInt(editTxAmount.replace(/\D/g, ""), 10);
+        if (isNaN(amt) || amt <= 0) return;
+        await updateTransaction(editTxId, {
+            description: editTxDesc.trim() || "Giao dịch",
+            amount: amt,
+        });
+        setEditTxId("");
     };
 
     // Các buổi để ghi chi phí: có chi phí HOẶC có người vote đi, sắp theo ngày mới nhất
@@ -408,31 +433,93 @@ export default function PublicFinancePage() {
                         </div>
                     ) : (
                         <div className="bg-white rounded-2xl shadow-card divide-y divide-navy-50 max-h-[28rem] overflow-y-auto">
-                            {fundTransactions.map((t) => (
-                                <div
-                                    key={t.id}
-                                    className="flex items-center justify-between px-4 py-3 text-sm"
-                                >
-                                    <div>
-                                        <p className="font-medium text-navy-900">
-                                            {t.description}
-                                        </p>
-                                        <p className="text-xs text-gray-400">
-                                            {new Date(t.date + "T00:00:00").toLocaleDateString(
-                                                "vi-VN"
-                                            )}
-                                        </p>
-                                    </div>
-                                    <span
-                                        className={`font-mono font-semibold whitespace-nowrap ${
-                                            t.type === "income" ? "text-court-600" : "text-red-500"
-                                        }`}
+                            {fundTransactions.map((t) =>
+                                editTxId === t.id ? (
+                                    <div
+                                        key={t.id}
+                                        className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 text-sm bg-court-50/40"
                                     >
-                                        {t.type === "income" ? "+" : "−"}
-                                        {formatVND(t.amount)}
-                                    </span>
-                                </div>
-                            ))}
+                                        <input
+                                            type="text"
+                                            value={editTxDesc}
+                                            onChange={(e) => setEditTxDesc(e.target.value)}
+                                            className="flex-1 min-w-0 px-3 py-2 bg-white border border-navy-200 rounded-lg text-sm focus:outline-none focus:border-court-500"
+                                        />
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={editTxAmount}
+                                                onChange={(e) => setEditTxAmount(e.target.value)}
+                                                onKeyDown={(e) => e.key === "Enter" && saveEditTx()}
+                                                className="w-32 px-3 py-2 bg-white border border-navy-200 rounded-lg text-sm text-right focus:outline-none focus:border-court-500"
+                                                autoFocus
+                                            />
+                                            <button
+                                                onClick={saveEditTx}
+                                                className="text-court-600 hover:text-court-700"
+                                                aria-label="Lưu"
+                                            >
+                                                <Check size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => setEditTxId("")}
+                                                className="text-gray-400 hover:text-navy-900"
+                                                aria-label="Hủy"
+                                            >
+                                                <X size={17} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div
+                                        key={t.id}
+                                        className="flex items-center justify-between gap-3 px-4 py-3 text-sm group"
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-navy-900 truncate">
+                                                {t.description}
+                                            </p>
+                                            <p className="text-xs text-gray-400">
+                                                {new Date(t.date + "T00:00:00").toLocaleDateString(
+                                                    "vi-VN"
+                                                )}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <span
+                                                className={`font-mono font-semibold whitespace-nowrap ${
+                                                    t.type === "income"
+                                                        ? "text-court-600"
+                                                        : "text-red-500"
+                                                }`}
+                                            >
+                                                {t.type === "income" ? "+" : "−"}
+                                                {formatVND(t.amount)}
+                                            </span>
+                                            <button
+                                                onClick={() =>
+                                                    startEditTx(t.id, t.description, t.amount)
+                                                }
+                                                className="text-gray-300 hover:text-court-600 transition-colors"
+                                                aria-label="Sửa"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm(`Xóa giao dịch "${t.description}"?`))
+                                                        deleteTransaction(t.id);
+                                                }}
+                                                className="text-gray-300 hover:text-red-500 transition-colors"
+                                                aria-label="Xóa"
+                                            >
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            )}
                         </div>
                     )}
                 </section>

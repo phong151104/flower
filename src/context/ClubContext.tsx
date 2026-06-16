@@ -89,6 +89,10 @@ interface ClubContextType {
     // Transactions (quỹ CLB)
     transactions: Transaction[];
     addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => Promise<void>;
+    updateTransaction: (
+        id: string,
+        updates: Partial<Omit<Transaction, "id" | "createdAt">>
+    ) => Promise<void>;
     deleteTransaction: (id: string) => Promise<void>;
     totalIncome: number;
     totalExpense: number;
@@ -933,6 +937,24 @@ export function ClubProvider({ children }: { children: ReactNode }) {
         [dbReady]
     );
 
+    const updateTransaction = useCallback(
+        async (id: string, updates: Partial<Omit<Transaction, "id" | "createdAt">>) => {
+            setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+            if (dbReady && supabase) {
+                const row: Record<string, unknown> = {};
+                if (updates.type !== undefined) row.type = updates.type;
+                if (updates.amount !== undefined) row.amount = updates.amount;
+                if (updates.description !== undefined) row.description = updates.description;
+                if (updates.category !== undefined) row.category = updates.category;
+                if ("playerId" in updates) row.player_id = updates.playerId ?? null;
+                if (updates.date !== undefined) row.date = updates.date;
+                const { error } = await supabase.from("transactions").update(row).eq("id", id);
+                if (error) console.error("Transaction update failed:", error.message);
+            }
+        },
+        [dbReady]
+    );
+
     const deleteTransaction = useCallback(
         async (id: string) => {
             setTransactions((prev) => prev.filter((t) => t.id !== id));
@@ -1033,6 +1055,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 deleteTournamentTeam,
                 transactions,
                 addTransaction,
+                updateTransaction,
                 deleteTransaction,
                 totalIncome,
                 totalExpense,
