@@ -106,7 +106,7 @@ export default function PublicFinancePage() {
             .slice(0, 10);
     }, [trainingSessions, sessionCosts, trainingVotes]);
 
-    const fundTransactions = transactions.slice(0, 8);
+    const fundTransactions = transactions;
 
     const handleAddFund = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -407,7 +407,7 @@ export default function PublicFinancePage() {
                             Chưa có giao dịch quỹ nào.
                         </div>
                     ) : (
-                        <div className="bg-white rounded-2xl shadow-card divide-y divide-navy-50">
+                        <div className="bg-white rounded-2xl shadow-card divide-y divide-navy-50 max-h-[28rem] overflow-y-auto">
                             {fundTransactions.map((t) => (
                                 <div
                                     key={t.id}
