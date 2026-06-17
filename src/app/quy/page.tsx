@@ -291,17 +291,13 @@ export default function PublicFinancePage() {
                 <section className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-10">
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-court-600 text-xs sm:text-sm mb-1.5">
-                            <PiggyBank size={16} />
-                            Quỹ chung
+                            <TrendingUp size={16} />
+                            Đã thu
                         </div>
-                        <p
-                            className={`text-xl sm:text-2xl font-bold ${
-                                totalFund < 0 ? "text-red-500" : "text-navy-900"
-                            }`}
-                        >
-                            {formatVND(totalFund)}
+                        <p className="text-xl sm:text-2xl font-bold text-court-600">
+                            {formatVND(totalCollected)}
                         </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">tiền còn lại</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">tất cả hạng mục</p>
                     </div>
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-court-600 text-xs sm:text-sm mb-1.5">
@@ -332,6 +328,20 @@ export default function PublicFinancePage() {
                         )}
                     </div>
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
+                        <div className="flex items-center gap-2 text-court-600 text-xs sm:text-sm mb-1.5">
+                            <PiggyBank size={16} />
+                            Quỹ chung
+                        </div>
+                        <p
+                            className={`text-xl sm:text-2xl font-bold ${
+                                totalFund < 0 ? "text-red-500" : "text-navy-900"
+                            }`}
+                        >
+                            {formatVND(totalFund)}
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">tiền còn lại</p>
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-gray-500 text-xs sm:text-sm mb-1.5">
                             <TrendingDown size={16} />
                             Đã chi
@@ -340,16 +350,6 @@ export default function PublicFinancePage() {
                             {formatVND(totalSpent)}
                         </p>
                         <p className="text-[11px] text-gray-400 mt-0.5">sân/nước + chi khác</p>
-                    </div>
-                    <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
-                        <div className="flex items-center gap-2 text-court-600 text-xs sm:text-sm mb-1.5">
-                            <TrendingUp size={16} />
-                            Đã thu
-                        </div>
-                        <p className="text-xl sm:text-2xl font-bold text-court-600">
-                            {formatVND(totalCollected)}
-                        </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">tất cả hạng mục</p>
                     </div>
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm mb-1.5">
