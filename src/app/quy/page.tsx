@@ -161,6 +161,10 @@ export default function PublicFinancePage() {
         return { monthly: sumKind("monthly"), custom: sumKind("custom") };
     }, [fundDrives, fundDriveMembers]);
 
+    // Tiền thực còn lại của quỹ chung = số dư giao dịch (thu − chi)
+    // + tiền đã thu từ các đợt thu quỹ (tháng + giải/tùy chỉnh).
+    const totalFund = balance + driveAgg.monthly.collected + driveAgg.custom.collected;
+
     // Công nợ theo thành viên
     const debts = useMemo(
         () =>
@@ -279,9 +283,14 @@ export default function PublicFinancePage() {
                             <PiggyBank size={16} />
                             Quỹ chung
                         </div>
-                        <p className="text-xl sm:text-2xl font-bold text-navy-900">
-                            {formatVND(balance)}
+                        <p
+                            className={`text-xl sm:text-2xl font-bold ${
+                                totalFund < 0 ? "text-red-500" : "text-navy-900"
+                            }`}
+                        >
+                            {formatVND(totalFund)}
                         </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">tiền còn lại</p>
                     </div>
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-court-600 text-xs sm:text-sm mb-1.5">
