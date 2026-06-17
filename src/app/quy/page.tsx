@@ -18,7 +18,7 @@ import {
 import type { TransactionCategory, FundDriveKind } from "@/types/club";
 import {
     Wallet,
-    Receipt,
+    TrendingDown,
     TrendingUp,
     AlertCircle,
     CheckCircle2,
@@ -59,6 +59,8 @@ export default function PublicFinancePage() {
         setSessionPayment,
         transactions,
         balance,
+        totalIncome,
+        totalExpense,
         addTransaction,
         updateTransaction,
         deleteTransaction,
@@ -161,9 +163,18 @@ export default function PublicFinancePage() {
         return { monthly: sumKind("monthly"), custom: sumKind("custom") };
     }, [fundDrives, fundDriveMembers]);
 
-    // Tiền thực còn lại của quỹ chung = số dư giao dịch (thu − chi)
-    // + tiền đã thu từ các đợt thu quỹ (tháng + giải/tùy chỉnh).
-    const totalFund = balance + driveAgg.monthly.collected + driveAgg.custom.collected;
+    // Tổng hợp toàn bộ hạng mục (chi phí buổi + các đợt thu quỹ + giao dịch)
+    const driveCollected = driveAgg.monthly.collected + driveAgg.custom.collected;
+    const driveOutstanding = driveAgg.monthly.outstanding + driveAgg.custom.outstanding;
+
+    // Tiền thực còn lại của quỹ chung = số dư giao dịch (thu − chi) + đã thu các đợt quỹ
+    const totalFund = balance + driveCollected;
+    // Tổng đã chi = chi phí buổi (sân/nước) + các khoản chi trong giao dịch (mua bóng…)
+    const totalSpent = sessionAgg.total + totalExpense;
+    // Tổng đã thu = chi phí buổi đã thu + đã thu các đợt quỹ + đóng góp (giao dịch thu)
+    const totalCollected = sessionAgg.collected + driveCollected + totalIncome;
+    // Tổng còn thiếu = phần chưa đóng của buổi + của các đợt quỹ
+    const totalOwed = sessionAgg.outstanding + driveOutstanding;
 
     // Công nợ theo thành viên
     const debts = useMemo(
@@ -322,12 +333,13 @@ export default function PublicFinancePage() {
                     </div>
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-gray-500 text-xs sm:text-sm mb-1.5">
-                            <Receipt size={16} />
-                            Chi phí buổi
+                            <TrendingDown size={16} />
+                            Đã chi
                         </div>
                         <p className="text-xl sm:text-2xl font-bold text-navy-900">
-                            {formatVND(sessionAgg.total)}
+                            {formatVND(totalSpent)}
                         </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">sân/nước + chi khác</p>
                     </div>
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-court-600 text-xs sm:text-sm mb-1.5">
@@ -335,8 +347,9 @@ export default function PublicFinancePage() {
                             Đã thu
                         </div>
                         <p className="text-xl sm:text-2xl font-bold text-court-600">
-                            {formatVND(sessionAgg.collected)}
+                            {formatVND(totalCollected)}
                         </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">tất cả hạng mục</p>
                     </div>
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm mb-1.5">
@@ -345,11 +358,12 @@ export default function PublicFinancePage() {
                         </div>
                         <p
                             className={`text-xl sm:text-2xl font-bold ${
-                                sessionAgg.outstanding > 0.5 ? "text-red-500" : "text-court-600"
+                                totalOwed > 0.5 ? "text-red-500" : "text-court-600"
                             }`}
                         >
-                            {formatVND(sessionAgg.outstanding)}
+                            {formatVND(totalOwed)}
                         </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">mọi người chưa đóng</p>
                     </div>
                 </section>
 
