@@ -57,6 +57,7 @@ export default function PublicFinancePage() {
         addTransaction,
         updateTransaction,
         deleteTransaction,
+        deleteTrainingSession,
         isLoading,
     } = useClub();
 
@@ -393,7 +394,7 @@ export default function PublicFinancePage() {
                                         key={s.id}
                                         className="bg-white rounded-2xl shadow-card p-5"
                                     >
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex items-start justify-between gap-3">
                                             <div>
                                                 <h3 className="font-bold text-navy-900">
                                                     {s.title}
@@ -403,6 +404,22 @@ export default function PublicFinancePage() {
                                                     {s.location ? ` · ${s.location}` : ""}
                                                 </p>
                                             </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (
+                                                        confirm(
+                                                            `Xóa buổi "${s.title}" (${formatDate(
+                                                                s.sessionDate
+                                                            )})?\nSẽ xóa luôn chi phí, vote và trạng thái đóng tiền của buổi này.`
+                                                        )
+                                                    )
+                                                        deleteTrainingSession(s.id);
+                                                }}
+                                                className="shrink-0 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                aria-label="Xóa buổi tập"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                         <SessionCostPanel session={s} defaultExpanded={hasCost} />
                                     </div>
