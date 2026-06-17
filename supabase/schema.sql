@@ -79,6 +79,7 @@ create table training_sessions (
   end_time time,
   location text,
   note text,
+  archived boolean not null default false,   -- ẩn khỏi danh sách (giữ dữ liệu)
   created_at timestamptz not null default now()
 );
 

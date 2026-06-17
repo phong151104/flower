@@ -15,7 +15,7 @@ import {
     formatVND,
     type PlayerDebt,
 } from "@/lib/finance";
-import type { TransactionCategory, FundDriveKind } from "@/types/club";
+import type { TransactionCategory, FundDriveKind, TrainingSession } from "@/types/club";
 import {
     Wallet,
     TrendingDown,
@@ -33,6 +33,8 @@ import {
     HandCoins,
     CalendarRange,
     Trophy,
+    EyeOff,
+    Eye,
 } from "lucide-react";
 
 const FUND_CATEGORY_LABEL: Record<Exclude<TransactionCategory, "tien_san">, string> = {
@@ -65,6 +67,7 @@ export default function PublicFinancePage() {
         updateTransaction,
         deleteTransaction,
         deleteTrainingSession,
+        updateTrainingSession,
         fundDrives,
         fundDriveMembers,
         addFundDrive,
@@ -243,9 +246,68 @@ export default function PublicFinancePage() {
                     getSessionTotal(s.id, sessionCosts) > 0 ||
                     trainingVotes.some((v) => v.sessionId === s.id && v.status === "yes")
             )
-            .sort((a, b) => b.sessionDate.localeCompare(a.sessionDate))
-            .slice(0, 10);
+            .sort((a, b) => b.sessionDate.localeCompare(a.sessionDate));
     }, [trainingSessions, sessionCosts, trainingVotes]);
+
+    const visibleSessions = relevantSessions.filter((s) => !s.archived);
+    const archivedSessions = relevantSessions.filter((s) => s.archived);
+    const [showArchived, setShowArchived] = useState(false);
+
+    const renderSessionCard = (s: TrainingSession) => {
+        const hasCost = getSessionTotal(s.id, sessionCosts) > 0;
+        return (
+            <div key={s.id} className="bg-white rounded-2xl shadow-card p-5">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <h3 className="font-bold text-navy-900">{s.title}</h3>
+                        <p className="text-court-600 text-sm font-medium capitalize">
+                            {formatDate(s.sessionDate)}
+                            {s.location ? ` · ${s.location}` : ""}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                        {s.archived ? (
+                            <button
+                                onClick={() => updateTrainingSession(s.id, { archived: false })}
+                                className="flex items-center gap-1 p-2 text-gray-400 hover:text-court-600 hover:bg-court-50 rounded-lg transition-colors text-xs font-medium"
+                                aria-label="Hiện lại buổi tập"
+                            >
+                                <Eye size={16} />
+                                Hiện lại
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => updateTrainingSession(s.id, { archived: true })}
+                                className="p-2 text-gray-300 hover:text-court-600 hover:bg-court-50 rounded-lg transition-colors"
+                                aria-label="Ẩn buổi tập"
+                                title="Ẩn buổi này (giữ nguyên dữ liệu)"
+                            >
+                                <EyeOff size={16} />
+                            </button>
+                        )}
+                        <button
+                            onClick={() => {
+                                if (
+                                    confirm(
+                                        `Xóa hẳn buổi "${s.title}" (${formatDate(
+                                            s.sessionDate
+                                        )})?\nSẽ XÓA luôn chi phí, vote và trạng thái đóng tiền của buổi này (không khôi phục được).\nNếu chỉ muốn ẩn đi, dùng nút Ẩn.`
+                                    )
+                                )
+                                    deleteTrainingSession(s.id);
+                            }}
+                            className="shrink-0 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            aria-label="Xóa buổi tập"
+                            title="Xóa hẳn (mất dữ liệu)"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                </div>
+                <SessionCostPanel session={s} defaultExpanded={hasCost && !s.archived} />
+            </div>
+        );
+    };
 
     const fundTransactions = transactions;
 
@@ -533,51 +595,40 @@ export default function PublicFinancePage() {
                     </h2>
                     {isLoading ? (
                         <p className="text-gray-400 text-sm py-8 text-center">Đang tải...</p>
-                    ) : relevantSessions.length === 0 ? (
+                    ) : visibleSessions.length === 0 && archivedSessions.length === 0 ? (
                         <div className="bg-white rounded-2xl shadow-card p-8 text-center text-gray-400 text-sm">
                             Chưa có buổi tập nào. Tạo buổi tập và vote ở mục Lịch tập trước.
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            {relevantSessions.map((s) => {
-                                const hasCost = getSessionTotal(s.id, sessionCosts) > 0;
-                                return (
-                                    <div
-                                        key={s.id}
-                                        className="bg-white rounded-2xl shadow-card p-5"
+                        <>
+                            {visibleSessions.length === 0 ? (
+                                <div className="bg-white rounded-2xl shadow-card p-6 text-center text-gray-400 text-sm">
+                                    Tất cả buổi đã được ẩn.
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {visibleSessions.map((s) => renderSessionCard(s))}
+                                </div>
+                            )}
+
+                            {archivedSessions.length > 0 && (
+                                <div className="mt-4">
+                                    <button
+                                        onClick={() => setShowArchived((v) => !v)}
+                                        className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
                                     >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <h3 className="font-bold text-navy-900">
-                                                    {s.title}
-                                                </h3>
-                                                <p className="text-court-600 text-sm font-medium capitalize">
-                                                    {formatDate(s.sessionDate)}
-                                                    {s.location ? ` · ${s.location}` : ""}
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    if (
-                                                        confirm(
-                                                            `Xóa buổi "${s.title}" (${formatDate(
-                                                                s.sessionDate
-                                                            )})?\nSẽ xóa luôn chi phí, vote và trạng thái đóng tiền của buổi này.`
-                                                        )
-                                                    )
-                                                        deleteTrainingSession(s.id);
-                                                }}
-                                                className="shrink-0 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                aria-label="Xóa buổi tập"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                        <EyeOff size={15} />
+                                        Buổi đã ẩn ({archivedSessions.length})
+                                        {showArchived ? " — đang hiện" : ""}
+                                    </button>
+                                    {showArchived && (
+                                        <div className="space-y-4 mt-3 opacity-80">
+                                            {archivedSessions.map((s) => renderSessionCard(s))}
                                         </div>
-                                        <SessionCostPanel session={s} defaultExpanded={hasCost} />
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
                     )}
                 </section>
 

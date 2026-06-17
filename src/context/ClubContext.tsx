@@ -219,6 +219,7 @@ function dbToSession(row: Record<string, unknown>): TrainingSession {
         endTime: (row.end_time as string) || undefined,
         location: (row.location as string) || undefined,
         note: (row.note as string) || undefined,
+        archived: row.archived === true,
         createdAt: row.created_at as string,
     };
 }
@@ -232,6 +233,7 @@ function sessionToDb(s: Partial<TrainingSession>): Record<string, unknown> {
     if (s.endTime !== undefined) row.end_time = s.endTime || null;
     if (s.location !== undefined) row.location = s.location || null;
     if (s.note !== undefined) row.note = s.note || null;
+    if (s.archived !== undefined) row.archived = s.archived;
     return row;
 }
 

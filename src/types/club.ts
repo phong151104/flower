@@ -58,6 +58,7 @@ export interface TrainingSession {
     endTime?: string;
     location?: string;
     note?: string;
+    archived?: boolean;
     createdAt: string;
 }
 
