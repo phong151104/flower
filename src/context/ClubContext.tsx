@@ -11,6 +11,8 @@ import type {
     TrainingVote,
     SessionCost,
     SessionPayment,
+    FundDrive,
+    FundDriveMember,
     Tournament,
     TournamentTeam,
     Transaction,
@@ -75,6 +77,22 @@ interface ClubContextType {
     sessionPayments: SessionPayment[];
     /** Đánh dấu một người đã/chưa đóng tiền cho một buổi (upsert). */
     setSessionPayment: (sessionId: string, playerId: string, paid: boolean) => Promise<void>;
+
+    // Đợt thu quỹ (quỹ tháng / quỹ giải / tùy chỉnh)
+    fundDrives: FundDrive[];
+    fundDriveMembers: FundDriveMember[];
+    addFundDrive: (
+        drive: Omit<FundDrive, "id" | "createdAt">,
+        memberIds: string[]
+    ) => Promise<void>;
+    updateFundDrive: (
+        id: string,
+        updates: Partial<Omit<FundDrive, "id" | "createdAt">>
+    ) => Promise<void>;
+    deleteFundDrive: (id: string) => Promise<void>;
+    addFundDriveMember: (driveId: string, playerId: string) => Promise<void>;
+    removeFundDriveMember: (driveId: string, playerId: string) => Promise<void>;
+    setFundDriveMemberPaid: (driveId: string, playerId: string, paid: boolean) => Promise<void>;
 
     // Tournaments
     tournaments: Tournament[];
@@ -248,6 +266,27 @@ function dbToSessionPayment(row: Record<string, unknown>): SessionPayment {
     };
 }
 
+function dbToFundDrive(row: Record<string, unknown>): FundDrive {
+    return {
+        id: row.id as string,
+        title: row.title as string,
+        kind: (row.kind as FundDrive["kind"]) || "custom",
+        amount: Number(row.amount) || 0,
+        note: (row.note as string) || undefined,
+        createdAt: row.created_at as string,
+    };
+}
+
+function dbToFundDriveMember(row: Record<string, unknown>): FundDriveMember {
+    return {
+        id: row.id as string,
+        driveId: row.drive_id as string,
+        playerId: row.player_id as string,
+        paid: row.paid === true,
+        paidAt: (row.paid_at as string) || undefined,
+    };
+}
+
 function dbToTournament(row: Record<string, unknown>): Tournament {
     return {
         id: row.id as string,
@@ -303,6 +342,8 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     const [trainingVotes, setTrainingVotes] = useState<TrainingVote[]>([]);
     const [sessionCosts, setSessionCosts] = useState<SessionCost[]>([]);
     const [sessionPayments, setSessionPayments] = useState<SessionPayment[]>([]);
+    const [fundDrives, setFundDrives] = useState<FundDrive[]>([]);
+    const [fundDriveMembers, setFundDriveMembers] = useState<FundDriveMember[]>([]);
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [tournamentTeams, setTournamentTeams] = useState<TournamentTeam[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -324,6 +365,8 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 votesRes,
                 costsRes,
                 paymentsRes,
+                drivesRes,
+                driveMembersRes,
                 tournamentsRes,
                 teamsRes,
                 txRes,
@@ -335,6 +378,8 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 supabase.from("training_votes").select("*"),
                 supabase.from("session_costs").select("*"),
                 supabase.from("session_payments").select("*"),
+                supabase.from("fund_drives").select("*").order("created_at", { ascending: false }),
+                supabase.from("fund_drive_members").select("*"),
                 supabase.from("tournaments").select("*").order("tournament_date", { ascending: false }),
                 supabase.from("tournament_teams").select("*"),
                 supabase.from("transactions").select("*").order("date", { ascending: false }),
@@ -347,6 +392,8 @@ export function ClubProvider({ children }: { children: ReactNode }) {
             if (votesRes.data) setTrainingVotes(votesRes.data.map(dbToVote));
             if (costsRes.data) setSessionCosts(costsRes.data.map(dbToSessionCost));
             if (paymentsRes.data) setSessionPayments(paymentsRes.data.map(dbToSessionPayment));
+            if (drivesRes.data) setFundDrives(drivesRes.data.map(dbToFundDrive));
+            if (driveMembersRes.data) setFundDriveMembers(driveMembersRes.data.map(dbToFundDriveMember));
             if (tournamentsRes.data) setTournaments(tournamentsRes.data.map(dbToTournament));
             if (teamsRes.data) setTournamentTeams(teamsRes.data.map(dbToTeam));
             if (txRes.data) setTransactions(txRes.data.map(dbToTransaction));
@@ -438,6 +485,35 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 } else if (payload.eventType === "DELETE") {
                     const id = (payload.old as Record<string, unknown>).id as string;
                     setSessionPayments((prev) => prev.filter((x) => x.id !== id));
+                }
+            })
+            .on("postgres_changes", { event: "*", schema: "public", table: "fund_drives" }, (payload) => {
+                if (payload.eventType === "INSERT") {
+                    const d = dbToFundDrive(payload.new as Record<string, unknown>);
+                    setFundDrives((prev) => (prev.some((x) => x.id === d.id) ? prev : [d, ...prev]));
+                } else if (payload.eventType === "UPDATE") {
+                    const d = dbToFundDrive(payload.new as Record<string, unknown>);
+                    setFundDrives((prev) => prev.map((x) => (x.id === d.id ? d : x)));
+                } else if (payload.eventType === "DELETE") {
+                    const id = (payload.old as Record<string, unknown>).id as string;
+                    setFundDrives((prev) => prev.filter((x) => x.id !== id));
+                }
+            })
+            .on("postgres_changes", { event: "*", schema: "public", table: "fund_drive_members" }, (payload) => {
+                if (payload.eventType === "INSERT") {
+                    const m = dbToFundDriveMember(payload.new as Record<string, unknown>);
+                    setFundDriveMembers((prev) => {
+                        const filtered = prev.filter(
+                            (x) => !(x.driveId === m.driveId && x.playerId === m.playerId)
+                        );
+                        return [...filtered, m];
+                    });
+                } else if (payload.eventType === "UPDATE") {
+                    const m = dbToFundDriveMember(payload.new as Record<string, unknown>);
+                    setFundDriveMembers((prev) => prev.map((x) => (x.id === m.id ? m : x)));
+                } else if (payload.eventType === "DELETE") {
+                    const id = (payload.old as Record<string, unknown>).id as string;
+                    setFundDriveMembers((prev) => prev.filter((x) => x.id !== id));
                 }
             })
             .subscribe();
@@ -814,6 +890,137 @@ export function ClubProvider({ children }: { children: ReactNode }) {
         [dbReady]
     );
 
+    // ---- Đợt thu quỹ ----
+    const addFundDrive = useCallback(
+        async (drive: Omit<FundDrive, "id" | "createdAt">, memberIds: string[]) => {
+            const newDrive: FundDrive = {
+                ...drive,
+                id: crypto.randomUUID(),
+                createdAt: new Date().toISOString(),
+            };
+            const newMembers: FundDriveMember[] = memberIds.map((pid) => ({
+                id: crypto.randomUUID(),
+                driveId: newDrive.id,
+                playerId: pid,
+                paid: false,
+            }));
+            setFundDrives((prev) => [newDrive, ...prev]);
+            setFundDriveMembers((prev) => [...prev, ...newMembers]);
+            if (dbReady && supabase) {
+                const { error } = await supabase.from("fund_drives").insert({
+                    id: newDrive.id,
+                    title: newDrive.title,
+                    kind: newDrive.kind,
+                    amount: newDrive.amount,
+                    note: newDrive.note || null,
+                });
+                if (error) console.error("Fund drive insert failed:", error.message);
+                if (newMembers.length > 0) {
+                    const { error: mErr } = await supabase.from("fund_drive_members").insert(
+                        newMembers.map((m) => ({
+                            id: m.id,
+                            drive_id: m.driveId,
+                            player_id: m.playerId,
+                            paid: false,
+                        }))
+                    );
+                    if (mErr) console.error("Fund drive members insert failed:", mErr.message);
+                }
+            }
+        },
+        [dbReady]
+    );
+
+    const updateFundDrive = useCallback(
+        async (id: string, updates: Partial<Omit<FundDrive, "id" | "createdAt">>) => {
+            setFundDrives((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
+            if (dbReady && supabase) {
+                const row: Record<string, unknown> = {};
+                if (updates.title !== undefined) row.title = updates.title;
+                if (updates.kind !== undefined) row.kind = updates.kind;
+                if (updates.amount !== undefined) row.amount = updates.amount;
+                if ("note" in updates) row.note = updates.note || null;
+                await supabase.from("fund_drives").update(row).eq("id", id);
+            }
+        },
+        [dbReady]
+    );
+
+    const deleteFundDrive = useCallback(
+        async (id: string) => {
+            setFundDrives((prev) => prev.filter((d) => d.id !== id));
+            setFundDriveMembers((prev) => prev.filter((m) => m.driveId !== id));
+            if (dbReady && supabase) {
+                await supabase.from("fund_drives").delete().eq("id", id);
+            }
+        },
+        [dbReady]
+    );
+
+    const addFundDriveMember = useCallback(
+        async (driveId: string, playerId: string) => {
+            const exists = fundDriveMembers.some(
+                (m) => m.driveId === driveId && m.playerId === playerId
+            );
+            if (exists) return;
+            const newMember: FundDriveMember = {
+                id: crypto.randomUUID(),
+                driveId,
+                playerId,
+                paid: false,
+            };
+            setFundDriveMembers((prev) => [...prev, newMember]);
+            if (dbReady && supabase) {
+                const { error } = await supabase.from("fund_drive_members").insert({
+                    id: newMember.id,
+                    drive_id: driveId,
+                    player_id: playerId,
+                    paid: false,
+                });
+                if (error) console.error("Fund drive member insert failed:", error.message);
+            }
+        },
+        [dbReady, fundDriveMembers]
+    );
+
+    const removeFundDriveMember = useCallback(
+        async (driveId: string, playerId: string) => {
+            setFundDriveMembers((prev) =>
+                prev.filter((m) => !(m.driveId === driveId && m.playerId === playerId))
+            );
+            if (dbReady && supabase) {
+                await supabase
+                    .from("fund_drive_members")
+                    .delete()
+                    .eq("drive_id", driveId)
+                    .eq("player_id", playerId);
+            }
+        },
+        [dbReady]
+    );
+
+    const setFundDriveMemberPaid = useCallback(
+        async (driveId: string, playerId: string, paid: boolean) => {
+            const now = new Date().toISOString();
+            setFundDriveMembers((prev) =>
+                prev.map((m) =>
+                    m.driveId === driveId && m.playerId === playerId
+                        ? { ...m, paid, paidAt: paid ? now : undefined }
+                        : m
+                )
+            );
+            if (dbReady && supabase) {
+                const { error } = await supabase
+                    .from("fund_drive_members")
+                    .update({ paid, paid_at: paid ? now : null })
+                    .eq("drive_id", driveId)
+                    .eq("player_id", playerId);
+                if (error) console.error("Fund drive member update failed:", error.message);
+            }
+        },
+        [dbReady]
+    );
+
     // ---- Tournaments ----
     const addTournament = useCallback(
         async (t: Omit<Tournament, "id" | "createdAt">) => {
@@ -1045,6 +1252,14 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 deleteSessionCost,
                 sessionPayments,
                 setSessionPayment,
+                fundDrives,
+                fundDriveMembers,
+                addFundDrive,
+                updateFundDrive,
+                deleteFundDrive,
+                addFundDriveMember,
+                removeFundDriveMember,
+                setFundDriveMemberPaid,
                 tournaments,
                 addTournament,
                 updateTournament,

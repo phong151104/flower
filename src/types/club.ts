@@ -111,6 +111,27 @@ export interface SessionPayment {
     paidAt: string;
 }
 
+export type FundDriveKind = "monthly" | "custom";
+
+/** Một đợt thu quỹ (quỹ tháng / quỹ giải / tùy chỉnh) — số tiền cố định mỗi người. */
+export interface FundDrive {
+    id: string;
+    title: string;
+    kind: FundDriveKind;
+    amount: number;
+    note?: string;
+    createdAt: string;
+}
+
+/** Người trong một đợt thu + trạng thái đã đóng hay chưa. */
+export interface FundDriveMember {
+    id: string;
+    driveId: string;
+    playerId: string;
+    paid: boolean;
+    paidAt?: string;
+}
+
 export type TransactionCategory = "tien_san" | "bong" | "quy_thang" | "khac";
 
 export interface Transaction {

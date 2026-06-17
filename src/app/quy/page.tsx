@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SessionCostPanel from "@/components/club/SessionCostPanel";
+import FundDrivePanel from "@/components/club/FundDrivePanel";
 import PlayerSelect from "@/components/club/PlayerSelect";
 import { useClub } from "@/context/ClubContext";
 import {
@@ -13,7 +14,7 @@ import {
     formatVND,
     type PlayerDebt,
 } from "@/lib/finance";
-import type { TransactionCategory } from "@/types/club";
+import type { TransactionCategory, FundDriveKind } from "@/types/club";
 import {
     Wallet,
     Receipt,
@@ -28,6 +29,7 @@ import {
     Users,
     Pencil,
     Trash2,
+    HandCoins,
 } from "lucide-react";
 
 const FUND_CATEGORY_LABEL: Record<Exclude<TransactionCategory, "tien_san">, string> = {
@@ -58,6 +60,8 @@ export default function PublicFinancePage() {
         updateTransaction,
         deleteTransaction,
         deleteTrainingSession,
+        fundDrives,
+        addFundDrive,
         isLoading,
     } = useClub();
 
@@ -68,6 +72,62 @@ export default function PublicFinancePage() {
         useState<Exclude<TransactionCategory, "tien_san">>("bong");
     const [fundPlayer, setFundPlayer] = useState("");
     const [fundError, setFundError] = useState("");
+
+    // Tạo đợt thu quỹ (theo tháng / tùy chỉnh)
+    const [showDrive, setShowDrive] = useState(false);
+    const [driveTitle, setDriveTitle] = useState("");
+    const [driveKind, setDriveKind] = useState<FundDriveKind>("monthly");
+    const [driveAmount, setDriveAmount] = useState("");
+    const [driveMembers, setDriveMembers] = useState<Set<string>>(new Set());
+    const [driveError, setDriveError] = useState("");
+
+    const monthlyTitle = () => {
+        const d = new Date();
+        return `Quỹ tháng ${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    };
+    const activeSorted = [...players]
+        .filter((p) => p.isActive)
+        .sort((a, b) => a.name.localeCompare(b.name, "vi"));
+
+    const openDriveModal = () => {
+        setDriveKind("monthly");
+        setDriveTitle(monthlyTitle());
+        setDriveAmount("");
+        setDriveMembers(new Set(activeSorted.map((p) => p.id)));
+        setDriveError("");
+        setShowDrive(true);
+    };
+
+    const toggleDriveMember = (id: string) => {
+        setDriveMembers((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const handleCreateDrive = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const amt = parseInt(driveAmount.replace(/\D/g, ""), 10);
+        if (!driveTitle.trim()) {
+            setDriveError("Nhập tên đợt thu");
+            return;
+        }
+        if (isNaN(amt) || amt <= 0) {
+            setDriveError("Số tiền không hợp lệ");
+            return;
+        }
+        if (driveMembers.size === 0) {
+            setDriveError("Chọn ít nhất 1 người cần đóng");
+            return;
+        }
+        await addFundDrive(
+            { title: driveTitle.trim(), kind: driveKind, amount: amt },
+            Array.from(driveMembers)
+        );
+        setShowDrive(false);
+    };
 
     // Tổng hợp chi phí buổi tập
     const sessionAgg = useMemo(() => {
@@ -429,6 +489,35 @@ export default function PublicFinancePage() {
                     )}
                 </section>
 
+                {/* Đóng quỹ (đợt thu: quỹ tháng / quỹ giải / tùy chỉnh) */}
+                <section className="mb-10">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-display text-xl font-bold text-navy-900 flex items-center gap-2">
+                            <HandCoins size={20} className="text-ball-500" />
+                            Đóng quỹ
+                        </h2>
+                        <button
+                            onClick={openDriveModal}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-court-600 hover:bg-court-700 text-white rounded-full text-sm font-medium transition-colors"
+                        >
+                            <Plus size={16} />
+                            Tạo đợt thu
+                        </button>
+                    </div>
+                    {fundDrives.length === 0 ? (
+                        <div className="bg-white rounded-2xl shadow-card p-8 text-center text-gray-400 text-sm">
+                            Chưa có đợt thu nào. Tạo &ldquo;Quỹ tháng&rdquo; hoặc đợt thu tùy chỉnh
+                            (vd quỹ giải) rồi tick ai đã đóng.
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {fundDrives.map((d) => (
+                                <FundDrivePanel key={d.id} drive={d} />
+                            ))}
+                        </div>
+                    )}
+                </section>
+
                 {/* Quỹ chung */}
                 <section>
                     <div className="flex items-center justify-between mb-4">
@@ -630,6 +719,141 @@ export default function PublicFinancePage() {
                             )}
                             <button type="submit" className="btn-primary w-full">
                                 Lưu đóng góp
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal tạo đợt thu quỹ */}
+            {showDrive && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto"
+                    onClick={() => setShowDrive(false)}
+                >
+                    <div
+                        className="bg-white rounded-3xl p-6 w-full max-w-lg my-8 shadow-soft"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-lg font-bold text-navy-900 flex items-center gap-2">
+                                <HandCoins size={20} className="text-ball-500" />
+                                Tạo đợt thu quỹ
+                            </h2>
+                            <button
+                                onClick={() => setShowDrive(false)}
+                                className="text-gray-400 hover:text-navy-900"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateDrive} className="space-y-4">
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setDriveKind("monthly");
+                                        if (!driveTitle.trim()) setDriveTitle(monthlyTitle());
+                                    }}
+                                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                        driveKind === "monthly"
+                                            ? "bg-court-600 text-white"
+                                            : "bg-navy-50 text-gray-600 hover:bg-navy-100"
+                                    }`}
+                                >
+                                    Theo tháng
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setDriveKind("custom")}
+                                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                        driveKind === "custom"
+                                            ? "bg-ball-500 text-navy-900"
+                                            : "bg-navy-50 text-gray-600 hover:bg-navy-100"
+                                    }`}
+                                >
+                                    Tùy chỉnh (quỹ giải...)
+                                </button>
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-500 mb-1.5">
+                                    Tên đợt thu *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={driveTitle}
+                                    onChange={(e) => setDriveTitle(e.target.value)}
+                                    placeholder="VD: Quỹ tháng 06/2026 / Quỹ giải tháng 6"
+                                    className="w-full px-4 py-2.5 bg-white border border-navy-200 rounded-xl text-sm focus:outline-none focus:border-court-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-500 mb-1.5">
+                                    Số tiền mỗi người (₫) *
+                                </label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={driveAmount}
+                                    onChange={(e) => setDriveAmount(e.target.value)}
+                                    placeholder="VD: 100000"
+                                    className="w-full px-4 py-2.5 bg-white border border-navy-200 rounded-xl text-sm focus:outline-none focus:border-court-500"
+                                />
+                            </div>
+                            <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-sm text-gray-500">
+                                        Người cần đóng ({driveMembers.size})
+                                    </label>
+                                    <div className="flex gap-2 text-xs">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setDriveMembers(
+                                                    new Set(activeSorted.map((p) => p.id))
+                                                )
+                                            }
+                                            className="text-court-600 hover:text-court-700 font-medium"
+                                        >
+                                            Chọn tất cả
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDriveMembers(new Set())}
+                                            className="text-gray-400 hover:text-red-500"
+                                        >
+                                            Bỏ hết
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto p-0.5">
+                                    {activeSorted.map((p) => {
+                                        const on = driveMembers.has(p.id);
+                                        return (
+                                            <button
+                                                key={p.id}
+                                                type="button"
+                                                onClick={() => toggleDriveMember(p.id)}
+                                                className={`flex items-center justify-between gap-1 px-3 py-2 rounded-xl text-sm transition-colors ${
+                                                    on
+                                                        ? "bg-court-600 text-white"
+                                                        : "bg-navy-50 text-gray-600 hover:bg-navy-100"
+                                                }`}
+                                            >
+                                                <span className="truncate">{p.name}</span>
+                                                {on && <Check size={14} className="shrink-0" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            {driveError && (
+                                <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">
+                                    {driveError}
+                                </p>
+                            )}
+                            <button type="submit" className="btn-primary w-full">
+                                Tạo đợt thu
                             </button>
                         </form>
                     </div>

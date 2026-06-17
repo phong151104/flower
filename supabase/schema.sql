@@ -114,6 +114,27 @@ create table session_payments (
   unique (session_id, player_id)  -- upsert khi đổi trạng thái
 );
 
+-- Đợt thu quỹ (quỹ tháng / quỹ giải / tùy chỉnh): chọn người cần đóng,
+-- tick ai đã đóng. Số tiền cố định mỗi người (amount).
+create table fund_drives (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  kind text not null default 'custom' check (kind in ('monthly','custom')),
+  amount numeric not null default 0 check (amount >= 0),
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create table fund_drive_members (
+  id uuid primary key default gen_random_uuid(),
+  drive_id uuid not null references fund_drives(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  paid boolean not null default false,
+  paid_at timestamptz,
+  unique (drive_id, player_id)
+);
+create index idx_fund_drive_members_drive on fund_drive_members(drive_id);
+
 create table transactions (
   id text primary key,
   type text not null check (type in ('income','expense')),
@@ -145,6 +166,8 @@ alter table training_sessions enable row level security;
 alter table training_votes enable row level security;
 alter table session_costs enable row level security;
 alter table session_payments enable row level security;
+alter table fund_drives enable row level security;
+alter table fund_drive_members enable row level security;
 alter table transactions enable row level security;
 alter table announcements enable row level security;
 
@@ -156,6 +179,8 @@ create policy "anon full access" on training_sessions for all using (true) with 
 create policy "anon full access" on training_votes for all using (true) with check (true);
 create policy "anon full access" on session_costs for all using (true) with check (true);
 create policy "anon full access" on session_payments for all using (true) with check (true);
+create policy "anon full access" on fund_drives for all using (true) with check (true);
+create policy "anon full access" on fund_drive_members for all using (true) with check (true);
 create policy "anon full access" on transactions for all using (true) with check (true);
 create policy "anon full access" on announcements for all using (true) with check (true);
 
@@ -165,3 +190,5 @@ alter publication supabase_realtime add table matches;
 alter publication supabase_realtime add table training_votes;
 alter publication supabase_realtime add table session_costs;
 alter publication supabase_realtime add table session_payments;
+alter publication supabase_realtime add table fund_drives;
+alter publication supabase_realtime add table fund_drive_members;

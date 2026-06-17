@@ -9,6 +9,8 @@ import type {
     TrainingSession,
     TrainingVote,
     Player,
+    FundDrive,
+    FundDriveMember,
 } from "@/types/club";
 
 export const SESSION_COST_LABEL: Record<SessionCostCategory, string> = {
@@ -142,6 +144,32 @@ export function getPlayerDebt(
         paid,
         outstanding: owed - paid,
         unpaidSessions,
+    };
+}
+
+// ============ ĐỢT THU QUỸ ============
+
+export interface FundDriveSummary {
+    total: number; // số người × số tiền
+    paidCount: number;
+    memberCount: number;
+    collected: number; // đã thu
+    outstanding: number; // còn thiếu
+}
+
+export function getDriveMembers(driveId: string, members: FundDriveMember[]): FundDriveMember[] {
+    return members.filter((m) => m.driveId === driveId);
+}
+
+export function getDriveSummary(drive: FundDrive, members: FundDriveMember[]): FundDriveSummary {
+    const list = getDriveMembers(drive.id, members);
+    const paidCount = list.filter((m) => m.paid).length;
+    return {
+        total: list.length * drive.amount,
+        paidCount,
+        memberCount: list.length,
+        collected: paidCount * drive.amount,
+        outstanding: (list.length - paidCount) * drive.amount,
     };
 }
 
