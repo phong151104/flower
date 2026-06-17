@@ -11,6 +11,7 @@ import {
     getSessionFinance,
     getSessionTotal,
     getAllDebts,
+    getDriveSummary,
     formatVND,
     type PlayerDebt,
 } from "@/lib/finance";
@@ -30,6 +31,8 @@ import {
     Pencil,
     Trash2,
     HandCoins,
+    CalendarRange,
+    Trophy,
 } from "lucide-react";
 
 const FUND_CATEGORY_LABEL: Record<Exclude<TransactionCategory, "tien_san">, string> = {
@@ -61,6 +64,7 @@ export default function PublicFinancePage() {
         deleteTransaction,
         deleteTrainingSession,
         fundDrives,
+        fundDriveMembers,
         addFundDrive,
         isLoading,
     } = useClub();
@@ -140,6 +144,21 @@ export default function PublicFinancePage() {
         }
         return { total, collected, outstanding: total - collected };
     }, [trainingSessions, sessionCosts, trainingVotes, sessionPayments]);
+
+    // Tổng hợp đợt thu quỹ theo loại (tháng / giải)
+    const driveAgg = useMemo(() => {
+        const sumKind = (kind: "monthly" | "custom") => {
+            let collected = 0;
+            let total = 0;
+            for (const d of fundDrives.filter((x) => x.kind === kind)) {
+                const s = getDriveSummary(d, fundDriveMembers);
+                collected += s.collected;
+                total += s.total;
+            }
+            return { collected, total, outstanding: total - collected };
+        };
+        return { monthly: sumKind("monthly"), custom: sumKind("custom") };
+    }, [fundDrives, fundDriveMembers]);
 
     // Công nợ theo thành viên
     const debts = useMemo(
@@ -233,7 +252,7 @@ export default function PublicFinancePage() {
                 </div>
 
                 {/* Tổng quan */}
-                <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
+                <section className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-10">
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-court-600 text-xs sm:text-sm mb-1.5">
                             <PiggyBank size={16} />
@@ -242,6 +261,34 @@ export default function PublicFinancePage() {
                         <p className="text-xl sm:text-2xl font-bold text-navy-900">
                             {formatVND(balance)}
                         </p>
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
+                        <div className="flex items-center gap-2 text-court-600 text-xs sm:text-sm mb-1.5">
+                            <CalendarRange size={16} />
+                            Quỹ tháng
+                        </div>
+                        <p className="text-xl sm:text-2xl font-bold text-court-600">
+                            {formatVND(driveAgg.monthly.collected)}
+                        </p>
+                        {driveAgg.monthly.outstanding > 0.5 && (
+                            <p className="text-[11px] text-red-500 mt-0.5">
+                                còn thiếu {formatVND(driveAgg.monthly.outstanding)}
+                            </p>
+                        )}
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
+                        <div className="flex items-center gap-2 text-ball-600 text-xs sm:text-sm mb-1.5">
+                            <Trophy size={16} />
+                            Quỹ giải
+                        </div>
+                        <p className="text-xl sm:text-2xl font-bold text-navy-900">
+                            {formatVND(driveAgg.custom.collected)}
+                        </p>
+                        {driveAgg.custom.outstanding > 0.5 && (
+                            <p className="text-[11px] text-red-500 mt-0.5">
+                                còn thiếu {formatVND(driveAgg.custom.outstanding)}
+                            </p>
+                        )}
                     </div>
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
                         <div className="flex items-center gap-2 text-gray-500 text-xs sm:text-sm mb-1.5">
