@@ -102,26 +102,31 @@ export function getSessionFinance(
 
 export interface PlayerDebt {
     playerId: string;
-    sessionCount: number; // số buổi có chi phí mà người này tham gia
-    owed: number; // tổng phải đóng
+    itemCount: number; // số hạng mục phải đóng (buổi có chi phí + đợt thu quỹ)
+    owed: number; // tổng phải đóng (chi phí buổi + quỹ)
     paid: number; // tổng đã đóng
     outstanding: number; // còn nợ
     unpaidSessions: string[]; // id các buổi chưa đóng
+    unpaidDrives: string[]; // id các đợt thu chưa đóng
 }
 
-/** Công nợ của một người trên tất cả các buổi có chi phí. */
+/** Công nợ của một người trên mọi hạng mục: chi phí buổi tập + các đợt thu quỹ. */
 export function getPlayerDebt(
     playerId: string,
     sessions: TrainingSession[],
     costs: SessionCost[],
     votes: TrainingVote[],
-    payments: SessionPayment[]
+    payments: SessionPayment[],
+    drives: FundDrive[] = [],
+    driveMembers: FundDriveMember[] = []
 ): PlayerDebt {
     let owed = 0;
     let paid = 0;
-    let sessionCount = 0;
+    let itemCount = 0;
     const unpaidSessions: string[] = [];
+    const unpaidDrives: string[] = [];
 
+    // Chi phí buổi tập (chia theo người đi)
     for (const s of sessions) {
         const total = getSessionTotal(s.id, costs);
         if (total <= 0) continue; // buổi chưa có chi phí thì bỏ qua
@@ -129,7 +134,7 @@ export function getPlayerDebt(
         if (!attendees.includes(playerId)) continue;
         const share = total / attendees.length;
         owed += share;
-        sessionCount += 1;
+        itemCount += 1;
         if (isSessionPaid(s.id, playerId, payments)) {
             paid += share;
         } else {
@@ -137,13 +142,27 @@ export function getPlayerDebt(
         }
     }
 
+    // Đợt thu quỹ (quỹ tháng / quỹ giải / tùy chỉnh)
+    for (const d of drives) {
+        const m = driveMembers.find((x) => x.driveId === d.id && x.playerId === playerId);
+        if (!m) continue;
+        owed += d.amount;
+        itemCount += 1;
+        if (m.paid) {
+            paid += d.amount;
+        } else {
+            unpaidDrives.push(d.id);
+        }
+    }
+
     return {
         playerId,
-        sessionCount,
+        itemCount,
         owed,
         paid,
         outstanding: owed - paid,
         unpaidSessions,
+        unpaidDrives,
     };
 }
 
@@ -173,16 +192,18 @@ export function getDriveSummary(drive: FundDrive, members: FundDriveMember[]): F
     };
 }
 
-/** Công nợ của tất cả thành viên, sắp xếp theo còn nợ giảm dần. */
+/** Công nợ của tất cả thành viên trên mọi hạng mục, sắp xếp theo còn nợ giảm dần. */
 export function getAllDebts(
     players: Player[],
     sessions: TrainingSession[],
     costs: SessionCost[],
     votes: TrainingVote[],
-    payments: SessionPayment[]
+    payments: SessionPayment[],
+    drives: FundDrive[] = [],
+    driveMembers: FundDriveMember[] = []
 ): PlayerDebt[] {
     return players
-        .map((p) => getPlayerDebt(p.id, sessions, costs, votes, payments))
-        .filter((d) => d.sessionCount > 0)
+        .map((p) => getPlayerDebt(p.id, sessions, costs, votes, payments, drives, driveMembers))
+        .filter((d) => d.itemCount > 0)
         .sort((a, b) => b.outstanding - a.outstanding || b.owed - a.owed);
 }

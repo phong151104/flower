@@ -66,6 +66,7 @@ export default function PublicFinancePage() {
         fundDrives,
         fundDriveMembers,
         addFundDrive,
+        setFundDriveMemberPaid,
         isLoading,
     } = useClub();
 
@@ -162,8 +163,25 @@ export default function PublicFinancePage() {
 
     // Công nợ theo thành viên
     const debts = useMemo(
-        () => getAllDebts(players, trainingSessions, sessionCosts, trainingVotes, sessionPayments),
-        [players, trainingSessions, sessionCosts, trainingVotes, sessionPayments]
+        () =>
+            getAllDebts(
+                players,
+                trainingSessions,
+                sessionCosts,
+                trainingVotes,
+                sessionPayments,
+                fundDrives,
+                fundDriveMembers
+            ),
+        [
+            players,
+            trainingSessions,
+            sessionCosts,
+            trainingVotes,
+            sessionPayments,
+            fundDrives,
+            fundDriveMembers,
+        ]
     );
     const playerName = (id: string) => players.find((p) => p.id === id)?.name || "(đã xóa)";
 
@@ -171,10 +189,13 @@ export default function PublicFinancePage() {
     const settled = debts.filter((d) => d.outstanding <= 0.5);
     const totalOutstanding = debtors.reduce((s, d) => s + d.outstanding, 0);
 
-    // Đánh dấu đã đóng cho tất cả buổi còn nợ của một người
+    // Đánh dấu đã đóng cho tất cả hạng mục còn nợ của một người (buổi + đợt thu)
     const markAllPaid = async (d: PlayerDebt) => {
         for (const sid of d.unpaidSessions) {
             await setSessionPayment(sid, d.playerId, true);
+        }
+        for (const driveId of d.unpaidDrives) {
+            await setFundDriveMemberPaid(driveId, d.playerId, true);
         }
     };
 
@@ -371,7 +392,8 @@ export default function PublicFinancePage() {
                                                 {playerName(d.playerId)}
                                             </p>
                                             <span className="text-[11px] bg-red-50 text-red-500 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                                {d.unpaidSessions.length}/{d.sessionCount} buổi
+                                                {d.unpaidSessions.length + d.unpaidDrives.length}/
+                                                {d.itemCount} mục
                                             </span>
                                         </div>
                                         <p className="text-2xl font-bold text-red-500 mt-1.5 leading-none">
@@ -419,7 +441,7 @@ export default function PublicFinancePage() {
                                         <tr className="border-b border-navy-100 text-gray-400 text-left">
                                             <th className="px-4 py-3 font-medium">Thành viên</th>
                                             <th className="px-4 py-3 font-medium text-center">
-                                                Buổi
+                                                Mục
                                             </th>
                                             <th className="px-4 py-3 font-medium text-right">
                                                 Phải đóng
@@ -452,7 +474,7 @@ export default function PublicFinancePage() {
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-gray-500">
-                                                        {d.sessionCount}
+                                                        {d.itemCount}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono text-gray-600 whitespace-nowrap">
                                                         {formatVND(d.owed)}
