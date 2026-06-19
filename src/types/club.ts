@@ -2,6 +2,8 @@
 
 export type Tier = 1 | 2 | 3 | 4;
 
+export type Gender = "nam" | "nu" | "khac";
+
 export interface Player {
     id: string;
     name: string;
@@ -16,6 +18,7 @@ export interface Player {
     losses: number;
     lastMatchAt?: string;
     isActive: boolean;
+    gender?: Gender;
     createdAt: string;
 }
 
@@ -120,6 +123,7 @@ export interface FundDrive {
     title: string;
     kind: FundDriveKind;
     amount: number;
+    period?: string; // 'YYYY-MM' cho quỹ tháng
     note?: string;
     createdAt: string;
 }
@@ -130,6 +134,7 @@ export interface FundDriveMember {
     driveId: string;
     playerId: string;
     paid: boolean;
+    amount?: number; // tiền riêng người này (undefined = dùng mức mặc định của đợt)
     paidAt?: string;
 }
 

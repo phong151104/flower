@@ -28,6 +28,7 @@ create table players (
   losses int not null default 0,
   last_match_at timestamptz,                      -- tính Inactive (nghỉ 3 tháng)
   is_active boolean not null default true,
+  gender text,                                    -- 'nam' | 'nu' | 'khac'
   created_at timestamptz not null default now()
 );
 
@@ -122,6 +123,7 @@ create table fund_drives (
   title text not null,
   kind text not null default 'custom' check (kind in ('monthly','custom')),
   amount numeric not null default 0 check (amount >= 0),
+  period text,                                     -- 'YYYY-MM' cho quỹ tháng
   note text,
   created_at timestamptz not null default now()
 );
@@ -131,6 +133,7 @@ create table fund_drive_members (
   drive_id uuid not null references fund_drives(id) on delete cascade,
   player_id uuid not null references players(id) on delete cascade,
   paid boolean not null default false,
+  amount numeric,                                  -- tiền riêng người này (null = mức mặc định của đợt)
   paid_at timestamptz,
   unique (drive_id, player_id)
 );

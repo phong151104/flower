@@ -11,6 +11,7 @@ import type {
     Player,
     FundDrive,
     FundDriveMember,
+    Transaction,
 } from "@/types/club";
 
 export const SESSION_COST_LABEL: Record<SessionCostCategory, string> = {
@@ -146,10 +147,11 @@ export function getPlayerDebt(
     for (const d of drives) {
         const m = driveMembers.find((x) => x.driveId === d.id && x.playerId === playerId);
         if (!m) continue;
-        owed += d.amount;
+        const amt = m.amount == null ? d.amount : m.amount;
+        owed += amt;
         itemCount += 1;
         if (m.paid) {
-            paid += d.amount;
+            paid += amt;
         } else {
             unpaidDrives.push(d.id);
         }
@@ -180,15 +182,30 @@ export function getDriveMembers(driveId: string, members: FundDriveMember[]): Fu
     return members.filter((m) => m.driveId === driveId);
 }
 
+/** Số tiền một người phải đóng trong đợt: tiền riêng nếu có, không thì mức mặc định. */
+export function driveMemberAmount(drive: FundDrive, member: FundDriveMember): number {
+    return member.amount == null ? drive.amount : member.amount;
+}
+
 export function getDriveSummary(drive: FundDrive, members: FundDriveMember[]): FundDriveSummary {
     const list = getDriveMembers(drive.id, members);
-    const paidCount = list.filter((m) => m.paid).length;
+    let total = 0;
+    let collected = 0;
+    let paidCount = 0;
+    for (const m of list) {
+        const amt = driveMemberAmount(drive, m);
+        total += amt;
+        if (m.paid) {
+            collected += amt;
+            paidCount += 1;
+        }
+    }
     return {
-        total: list.length * drive.amount,
+        total,
         paidCount,
         memberCount: list.length,
-        collected: paidCount * drive.amount,
-        outstanding: (list.length - paidCount) * drive.amount,
+        collected,
+        outstanding: total - collected,
     };
 }
 
@@ -206,4 +223,78 @@ export function getAllDebts(
         .map((p) => getPlayerDebt(p.id, sessions, costs, votes, payments, drives, driveMembers))
         .filter((d) => d.itemCount > 0)
         .sort((a, b) => b.outstanding - a.outstanding || b.owed - a.owed);
+}
+
+// ============ TỔNG HỢP (gộp mọi hạng mục — tiền sân/nước CÓ tính vào quỹ) ============
+
+export interface FinanceInput {
+    transactions: Transaction[];
+    sessions: TrainingSession[];
+    sessionCosts: SessionCost[];
+    votes: TrainingVote[];
+    payments: SessionPayment[];
+    drives: FundDrive[];
+    driveMembers: FundDriveMember[];
+}
+
+/** Tháng (YYYY-MM) của một đợt thu: ưu tiên period, không thì theo created_at. */
+function driveMonth(d: FundDrive): string {
+    return d.period || (d.createdAt || "").slice(0, 7);
+}
+
+export interface OverallTotals {
+    thu: number; // tổng đã thu (quỹ đã đóng + tiền buổi đã thu + thu giao dịch)
+    chi: number; // tổng đã chi (chi giao dịch + chi phí buổi)
+    conLai: number;
+}
+
+export function getOverallTotals(input: FinanceInput): OverallTotals {
+    let thu = 0;
+    let chi = 0;
+    for (const t of input.transactions) {
+        if (t.type === "income") thu += t.amount;
+        else chi += t.amount;
+    }
+    for (const s of input.sessions) {
+        const fin = getSessionFinance(s.id, input.sessionCosts, input.votes, input.payments);
+        thu += fin.collected;
+        chi += fin.total;
+    }
+    for (const d of input.drives) {
+        thu += getDriveSummary(d, input.driveMembers).collected;
+    }
+    return { thu, chi, conLai: thu - chi };
+}
+
+export interface MonthRow {
+    month: string; // YYYY-MM
+    thu: number;
+    chi: number;
+}
+
+/** Tổng thu/chi theo từng tháng (gộp giao dịch + chi phí buổi + đợt thu quỹ). */
+export function getMonthlyBreakdown(input: FinanceInput): MonthRow[] {
+    const map = new Map<string, MonthRow>();
+    const bump = (month: string, thu: number, chi: number) => {
+        if (!month) return;
+        const cur = map.get(month) || { month, thu: 0, chi: 0 };
+        cur.thu += thu;
+        cur.chi += chi;
+        map.set(month, cur);
+    };
+    for (const t of input.transactions) {
+        const m = (t.date || "").slice(0, 7);
+        if (t.type === "income") bump(m, t.amount, 0);
+        else bump(m, 0, t.amount);
+    }
+    for (const s of input.sessions) {
+        const m = (s.sessionDate || "").slice(0, 7);
+        const fin = getSessionFinance(s.id, input.sessionCosts, input.votes, input.payments);
+        if (fin.total > 0 || fin.collected > 0) bump(m, fin.collected, fin.total);
+    }
+    for (const d of input.drives) {
+        const sum = getDriveSummary(d, input.driveMembers);
+        if (sum.collected > 0) bump(driveMonth(d), sum.collected, 0);
+    }
+    return Array.from(map.values()).sort((a, b) => b.month.localeCompare(a.month));
 }

@@ -93,6 +93,11 @@ interface ClubContextType {
     addFundDriveMember: (driveId: string, playerId: string) => Promise<void>;
     removeFundDriveMember: (driveId: string, playerId: string) => Promise<void>;
     setFundDriveMemberPaid: (driveId: string, playerId: string, paid: boolean) => Promise<void>;
+    setFundDriveMemberAmount: (
+        driveId: string,
+        playerId: string,
+        amount: number | null
+    ) => Promise<void>;
 
     // Tournaments
     tournaments: Tournament[];
@@ -148,6 +153,7 @@ function dbToPlayer(row: Record<string, unknown>): Player {
         losses: (row.losses as number) || 0,
         lastMatchAt: (row.last_match_at as string) || undefined,
         isActive: row.is_active !== false,
+        gender: (row.gender as Player["gender"]) || undefined,
         createdAt: row.created_at as string,
     };
 }
@@ -167,6 +173,7 @@ function playerToDb(p: Partial<Player>): Record<string, unknown> {
     if (p.losses !== undefined) row.losses = p.losses;
     if (p.lastMatchAt !== undefined) row.last_match_at = p.lastMatchAt || null;
     if (p.isActive !== undefined) row.is_active = p.isActive;
+    if (p.gender !== undefined) row.gender = p.gender || null;
     return row;
 }
 
@@ -274,6 +281,7 @@ function dbToFundDrive(row: Record<string, unknown>): FundDrive {
         title: row.title as string,
         kind: (row.kind as FundDrive["kind"]) || "custom",
         amount: Number(row.amount) || 0,
+        period: (row.period as string) || undefined,
         note: (row.note as string) || undefined,
         createdAt: row.created_at as string,
     };
@@ -285,6 +293,7 @@ function dbToFundDriveMember(row: Record<string, unknown>): FundDriveMember {
         driveId: row.drive_id as string,
         playerId: row.player_id as string,
         paid: row.paid === true,
+        amount: row.amount == null ? undefined : Number(row.amount),
         paidAt: (row.paid_at as string) || undefined,
     };
 }
@@ -914,6 +923,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                     title: newDrive.title,
                     kind: newDrive.kind,
                     amount: newDrive.amount,
+                    period: newDrive.period || null,
                     note: newDrive.note || null,
                 });
                 if (error) console.error("Fund drive insert failed:", error.message);
@@ -941,6 +951,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 if (updates.title !== undefined) row.title = updates.title;
                 if (updates.kind !== undefined) row.kind = updates.kind;
                 if (updates.amount !== undefined) row.amount = updates.amount;
+                if ("period" in updates) row.period = updates.period || null;
                 if ("note" in updates) row.note = updates.note || null;
                 await supabase.from("fund_drives").update(row).eq("id", id);
             }
@@ -1018,6 +1029,27 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                     .eq("drive_id", driveId)
                     .eq("player_id", playerId);
                 if (error) console.error("Fund drive member update failed:", error.message);
+            }
+        },
+        [dbReady]
+    );
+
+    const setFundDriveMemberAmount = useCallback(
+        async (driveId: string, playerId: string, amount: number | null) => {
+            setFundDriveMembers((prev) =>
+                prev.map((m) =>
+                    m.driveId === driveId && m.playerId === playerId
+                        ? { ...m, amount: amount == null ? undefined : amount }
+                        : m
+                )
+            );
+            if (dbReady && supabase) {
+                const { error } = await supabase
+                    .from("fund_drive_members")
+                    .update({ amount })
+                    .eq("drive_id", driveId)
+                    .eq("player_id", playerId);
+                if (error) console.error("Fund drive member amount update failed:", error.message);
             }
         },
         [dbReady]
@@ -1262,6 +1294,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 addFundDriveMember,
                 removeFundDriveMember,
                 setFundDriveMemberPaid,
+                setFundDriveMemberAmount,
                 tournaments,
                 addTournament,
                 updateTournament,
