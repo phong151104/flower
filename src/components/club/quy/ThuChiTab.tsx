@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useClub } from "@/context/ClubContext";
 import type { FundDrive } from "@/types/club";
 import { getDriveSummary, driveMemberAmount, formatVND } from "@/lib/finance";
-import { Plus, Trash2, X, UserPlus } from "lucide-react";
+import { Plus, Trash2, X, UserPlus, Eye, EyeOff } from "lucide-react";
 
 function monthLabel(month: string) {
     return `Tháng ${Number(month.slice(5))}/${month.slice(0, 4)}`;
@@ -335,6 +335,12 @@ export default function ThuChiTab() {
         fundDrives.find((d) => d.kind === "monthly" && d.period === month);
     const customDrives = fundDrives.filter((d) => d.kind !== "monthly");
 
+    // Tách tháng đã qua / tháng hiện tại + sau này
+    const curMonth = new Date().toISOString().slice(0, 7);
+    const pastMonths = months.filter((m) => m < curMonth);
+    const recentMonths = months.filter((m) => m >= curMonth);
+    const [showPast, setShowPast] = useState(false);
+
     const addMonth = async () => {
         if (!newMonth) return;
         const ids = players.filter((p) => p.isActive).map((p) => p.id);
@@ -399,7 +405,35 @@ export default function ThuChiTab() {
                     Chưa có tháng nào. Bấm &ldquo;Thêm tháng&rdquo; để bắt đầu.
                 </div>
             ) : (
-                months.map((m) => <MonthBlock key={m} month={m} drive={monthlyDrive(m)} />)
+                <>
+                    {recentMonths.length === 0 && !showPast && (
+                        <div className="bg-white rounded-2xl shadow-card p-6 text-center text-gray-400 text-sm">
+                            Các tháng đều đã qua và đang được ẩn.
+                        </div>
+                    )}
+                    {recentMonths.map((m) => (
+                        <MonthBlock key={m} month={m} drive={monthlyDrive(m)} />
+                    ))}
+
+                    {pastMonths.length > 0 && (
+                        <div>
+                            <button
+                                onClick={() => setShowPast((v) => !v)}
+                                className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-court-700"
+                            >
+                                {showPast ? <EyeOff size={15} /> : <Eye size={15} />}
+                                {showPast ? "Ẩn tháng đã qua" : `Hiện tháng đã qua (${pastMonths.length})`}
+                            </button>
+                            {showPast && (
+                                <div className="space-y-6 mt-4 opacity-90">
+                                    {pastMonths.map((m) => (
+                                        <MonthBlock key={m} month={m} drive={monthlyDrive(m)} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </>
             )}
 
             {/* Đợt thu khác (quỹ giải / tùy chỉnh) */}
