@@ -124,10 +124,10 @@ export default function MonthlyGridTab() {
                 </div>
             ) : (
                 <div className="bg-white rounded-2xl shadow-card overflow-x-auto">
-                    <table className="text-sm border-collapse min-w-max">
+                    <table className="text-sm border-collapse w-full min-w-[480px]">
                         <thead>
                             <tr>
-                                <th className="sticky left-0 z-10 bg-navy-50 border-b-2 border-r border-navy-100 px-4 py-3 text-left font-semibold text-gray-500 min-w-[120px]">
+                                <th className="sticky left-0 z-10 bg-navy-50 border-b-2 border-r border-navy-200 px-4 py-3 text-left font-semibold text-gray-500 min-w-[120px]">
                                     Thành viên
                                 </th>
                                 {sessions.map((s) => {
@@ -136,7 +136,7 @@ export default function MonthlyGridTab() {
                                     return (
                                         <th
                                             key={s.id}
-                                            className="border-b-2 border-l border-navy-100 px-3 py-2.5 min-w-[116px] bg-navy-50/50"
+                                            className="border-b-2 border-l border-navy-200 px-3 py-2.5 min-w-[116px] bg-navy-50/50"
                                         >
                                             <div className="flex flex-col items-center gap-1">
                                                 <div className="flex items-center gap-1.5">
@@ -174,7 +174,7 @@ export default function MonthlyGridTab() {
                         <tbody>
                             {members.map((p) => (
                                 <tr key={p.id} className="border-b border-navy-50">
-                                    <td className="sticky left-0 z-10 bg-white border-r border-navy-100 px-4 py-2 font-medium text-navy-900">
+                                    <td className="sticky left-0 z-10 bg-white border-r border-navy-200 px-4 py-2 font-medium text-navy-900">
                                         {p.name}
                                     </td>
                                     {sessions.map((s) => {
@@ -188,7 +188,7 @@ export default function MonthlyGridTab() {
                                         return (
                                             <td
                                                 key={s.id}
-                                                className={`border-l border-navy-50 px-2 py-2 align-top ${
+                                                className={`border-l border-navy-200 px-2 py-2 align-top ${
                                                     di ? "bg-court-50/40" : ""
                                                 }`}
                                             >
@@ -246,7 +246,7 @@ export default function MonthlyGridTab() {
                                     key={cr.category}
                                     className={`bg-ball-50/40 ${ri === 0 ? "border-t-2 border-navy-100" : ""}`}
                                 >
-                                    <td className="sticky left-0 z-10 bg-ball-50 border-r border-navy-100 px-4 py-1.5 font-medium text-gray-600">
+                                    <td className="sticky left-0 z-10 bg-ball-50 border-r border-navy-200 px-4 py-1.5 font-medium text-gray-600">
                                         <span className="mr-1">{cr.icon}</span>
                                         {cr.label}
                                     </td>
@@ -257,7 +257,7 @@ export default function MonthlyGridTab() {
                                         return (
                                             <td
                                                 key={s.id}
-                                                className="border-l border-navy-50 px-1.5 py-1 text-right"
+                                                className="border-l border-navy-200 px-1.5 py-1 text-right"
                                             >
                                                 {editCell === key ? (
                                                     <input
@@ -301,13 +301,13 @@ export default function MonthlyGridTab() {
                                 </tr>
                             ))}
                             <tr className="bg-navy-50 border-t-2 border-navy-100 font-bold text-navy-900">
-                                <td className="sticky left-0 z-10 bg-navy-50 border-r border-navy-100 px-4 py-2.5">
+                                <td className="sticky left-0 z-10 bg-navy-50 border-r border-navy-200 px-4 py-2.5">
                                     Tổng
                                 </td>
                                 {sessions.map((s) => (
                                     <td
                                         key={s.id}
-                                        className="border-l border-navy-100 px-2 py-2.5 text-right font-mono"
+                                        className="border-l border-navy-200 px-2 py-2.5 text-right font-mono"
                                     >
                                         {formatVND(getSessionTotal(s.id, sessionCosts))}
                                     </td>
