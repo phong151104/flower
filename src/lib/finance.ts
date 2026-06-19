@@ -248,17 +248,14 @@ export interface OverallTotals {
     conLai: number;
 }
 
+// LƯU Ý: tiền sân/nước theo buổi (session costs/payments) KHÔNG tính vào tổng quỹ.
+// Tổng quỹ chỉ gồm: quỹ tháng/đợt thu (fund drives) + thu/chi trong giao dịch.
 export function getOverallTotals(input: FinanceInput): OverallTotals {
     let thu = 0;
     let chi = 0;
     for (const t of input.transactions) {
         if (t.type === "income") thu += t.amount;
         else chi += t.amount;
-    }
-    for (const s of input.sessions) {
-        const fin = getSessionFinance(s.id, input.sessionCosts, input.votes, input.payments);
-        thu += fin.collected;
-        chi += fin.total;
     }
     for (const d of input.drives) {
         thu += getDriveSummary(d, input.driveMembers).collected;
@@ -286,11 +283,6 @@ export function getMonthlyBreakdown(input: FinanceInput): MonthRow[] {
         const m = (t.date || "").slice(0, 7);
         if (t.type === "income") bump(m, t.amount, 0);
         else bump(m, 0, t.amount);
-    }
-    for (const s of input.sessions) {
-        const m = (s.sessionDate || "").slice(0, 7);
-        const fin = getSessionFinance(s.id, input.sessionCosts, input.votes, input.payments);
-        if (fin.total > 0 || fin.collected > 0) bump(m, fin.collected, fin.total);
     }
     for (const d of input.drives) {
         const sum = getDriveSummary(d, input.driveMembers);
