@@ -75,7 +75,10 @@ export default function PublicFinancePage() {
         isLoading,
     } = useClub();
 
+    const [tab, setTab] = useState<"summary" | "thuchi" | "monthly">("summary");
+
     const [showFund, setShowFund] = useState(false);
+    const [fundType, setFundType] = useState<"income" | "expense">("income");
     const [fundAmount, setFundAmount] = useState("");
     const [fundDesc, setFundDesc] = useState("");
     const [fundCategory, setFundCategory] =
@@ -319,7 +322,7 @@ export default function PublicFinancePage() {
             return;
         }
         await addTransaction({
-            type: "income",
+            type: fundType,
             amount: amt,
             description:
                 fundDesc.trim() ||
@@ -337,6 +340,46 @@ export default function PublicFinancePage() {
         setShowFund(false);
     };
 
+    // Tổng thu / chi theo tháng (gộp giao dịch + chi phí buổi + đợt thu quỹ)
+    const monthlyBreakdown = useMemo(() => {
+        const map = new Map<string, { thu: number; chi: number }>();
+        const bump = (month: string, thu: number, chi: number) => {
+            const cur = map.get(month) || { thu: 0, chi: 0 };
+            cur.thu += thu;
+            cur.chi += chi;
+            map.set(month, cur);
+        };
+        for (const t of transactions) {
+            const m = (t.date || "").slice(0, 7);
+            if (!m) continue;
+            if (t.type === "income") bump(m, t.amount, 0);
+            else bump(m, 0, t.amount);
+        }
+        for (const s of trainingSessions) {
+            const m = (s.sessionDate || "").slice(0, 7);
+            if (!m) continue;
+            const fin = getSessionFinance(s.id, sessionCosts, trainingVotes, sessionPayments);
+            if (fin.total > 0 || fin.collected > 0) bump(m, fin.collected, fin.total);
+        }
+        for (const d of fundDrives) {
+            const m = (d.createdAt || "").slice(0, 7);
+            if (!m) continue;
+            const sum = getDriveSummary(d, fundDriveMembers);
+            if (sum.collected > 0) bump(m, sum.collected, 0);
+        }
+        return Array.from(map.entries())
+            .map(([month, v]) => ({ month, ...v }))
+            .sort((a, b) => b.month.localeCompare(a.month));
+    }, [
+        transactions,
+        trainingSessions,
+        sessionCosts,
+        trainingVotes,
+        sessionPayments,
+        fundDrives,
+        fundDriveMembers,
+    ]);
+
     return (
         <>
             <Navbar />
@@ -349,6 +392,31 @@ export default function PublicFinancePage() {
                     </p>
                 </div>
 
+                {/* Tabs con */}
+                <div className="flex gap-1 mb-8 bg-white rounded-2xl shadow-card p-1.5 w-fit">
+                    {(
+                        [
+                            ["summary", "Tổng hợp"],
+                            ["thuchi", "Thu chi"],
+                            ["monthly", "Theo tháng"],
+                        ] as [typeof tab, string][]
+                    ).map(([key, label]) => (
+                        <button
+                            key={key}
+                            onClick={() => setTab(key)}
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                                tab === key
+                                    ? "bg-court-600 text-white"
+                                    : "text-gray-500 hover:bg-navy-50"
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+
+                {tab === "summary" && (
+                  <>
                 {/* Tổng quan */}
                 <section className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-10">
                     <div className="bg-white rounded-2xl shadow-card p-4 sm:p-5">
@@ -428,6 +496,62 @@ export default function PublicFinancePage() {
                         <p className="text-[11px] text-gray-400 mt-0.5">mọi người chưa đóng</p>
                     </div>
                 </section>
+
+                {/* Tổng thu / chi theo tháng */}
+                {monthlyBreakdown.length > 0 && (
+                    <section className="mb-10">
+                        <h2 className="font-display text-xl font-bold text-navy-900 flex items-center gap-2 mb-4">
+                            <CalendarRange size={20} className="text-court-600" />
+                            Theo tháng
+                        </h2>
+                        <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-navy-100 text-gray-400 text-left">
+                                        <th className="px-4 py-3 font-medium">Tháng</th>
+                                        <th className="px-4 py-3 font-medium text-right">
+                                            Tổng thu
+                                        </th>
+                                        <th className="px-4 py-3 font-medium text-right">
+                                            Tổng chi
+                                        </th>
+                                        <th className="px-4 py-3 font-medium text-right">
+                                            Chênh lệch
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {monthlyBreakdown.map((m) => {
+                                        const diff = m.thu - m.chi;
+                                        return (
+                                            <tr
+                                                key={m.month}
+                                                className="border-b border-navy-50 last:border-0 hover:bg-navy-50/50"
+                                            >
+                                                <td className="px-4 py-3 font-medium text-navy-900">
+                                                    {m.month.slice(5)}/{m.month.slice(0, 4)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono text-court-600 whitespace-nowrap">
+                                                    {formatVND(m.thu)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono text-red-500 whitespace-nowrap">
+                                                    {formatVND(m.chi)}
+                                                </td>
+                                                <td
+                                                    className={`px-4 py-3 text-right font-mono font-semibold whitespace-nowrap ${
+                                                        diff >= 0 ? "text-court-600" : "text-red-500"
+                                                    }`}
+                                                >
+                                                    {formatVND(diff)}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                )}
 
                 {/* Dashboard công nợ */}
                 <section className="mb-10">
@@ -586,8 +710,10 @@ export default function PublicFinancePage() {
                       </>
                     )}
                 </section>
+                  </>
+                )}
 
-                {/* Chi phí theo buổi */}
+                {tab === "monthly" && (
                 <section className="mb-10">
                     <h2 className="font-display text-xl font-bold text-navy-900 flex items-center gap-2 mb-4">
                         <CalendarDays size={20} className="text-court-600" />
@@ -631,7 +757,10 @@ export default function PublicFinancePage() {
                         </>
                     )}
                 </section>
+                )}
 
+                {tab === "thuchi" && (
+                  <>
                 {/* Đóng quỹ (đợt thu: quỹ tháng / quỹ giải / tùy chỉnh) */}
                 <section className="mb-10">
                     <div className="flex items-center justify-between mb-4">
@@ -673,7 +802,7 @@ export default function PublicFinancePage() {
                             className="flex items-center gap-1.5 px-4 py-2 bg-court-600 hover:bg-court-700 text-white rounded-full text-sm font-medium transition-colors"
                         >
                             <Plus size={16} />
-                            Đóng góp quỹ
+                            Thêm thu/chi
                         </button>
                     </div>
                     {fundTransactions.length === 0 ? (
@@ -772,6 +901,8 @@ export default function PublicFinancePage() {
                         </div>
                     )}
                 </section>
+                  </>
+                )}
             </main>
             <Footer />
 
@@ -788,7 +919,7 @@ export default function PublicFinancePage() {
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-lg font-bold text-navy-900 flex items-center gap-2">
                                 <PiggyBank size={20} className="text-ball-500" />
-                                Đóng góp quỹ
+                                Ghi thu / chi
                             </h2>
                             <button
                                 onClick={() => setShowFund(false)}
@@ -798,6 +929,30 @@ export default function PublicFinancePage() {
                             </button>
                         </div>
                         <form onSubmit={handleAddFund} className="space-y-4">
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setFundType("income")}
+                                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                        fundType === "income"
+                                            ? "bg-court-600 text-white"
+                                            : "bg-navy-50 text-gray-500 hover:bg-navy-100"
+                                    }`}
+                                >
+                                    Thu (tiền vào)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFundType("expense")}
+                                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                        fundType === "expense"
+                                            ? "bg-red-500 text-white"
+                                            : "bg-navy-50 text-gray-500 hover:bg-navy-100"
+                                    }`}
+                                >
+                                    Chi (tiền ra)
+                                </button>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                                 {(
                                     Object.entries(FUND_CATEGORY_LABEL) as [
@@ -861,7 +1016,7 @@ export default function PublicFinancePage() {
                                 </p>
                             )}
                             <button type="submit" className="btn-primary w-full">
-                                Lưu đóng góp
+                                Lưu giao dịch
                             </button>
                         </form>
                     </div>
