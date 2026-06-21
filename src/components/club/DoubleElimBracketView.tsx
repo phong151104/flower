@@ -84,7 +84,7 @@ export default function DoubleElimBracketView({
 
     return (
         <div className="overflow-x-auto pb-2">
-            <div className="relative" style={{ width: canvasW, height: canvasH }}>
+            <div className="relative mx-auto" style={{ width: canvasW, height: canvasH }}>
                 {/* Nhãn cột */}
                 {upperLabels.map((l, i) => (
                     <div
