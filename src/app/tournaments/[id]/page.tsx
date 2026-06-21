@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import MatchForm from "@/components/club/MatchForm";
 import MatchCard from "@/components/club/MatchCard";
 import PlayerSelect from "@/components/club/PlayerSelect";
+import DoubleElimBracketView from "@/components/club/DoubleElimBracketView";
 import { useClub } from "@/context/ClubContext";
 import {
     getGroupStandings,
@@ -636,34 +637,16 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
 
                         <section className="mb-10">
                             <h2 className="font-display text-xl font-bold text-navy-900 mb-4">
-                                Nhánh thắng
+                                Sơ đồ nhánh
+                                <span className="text-sm font-normal text-gray-400 ml-2">
+                                    (kéo ngang để xem)
+                                </span>
                             </h2>
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                {renderMatchup(de.ur1m1)}
-                                {renderMatchup(de.ur1m2)}
-                                {renderUr2M1()}
-                                {renderMatchup(de.ur2m2)}
-                                <div className="sm:col-span-2">{renderMatchup(de.ur3)}</div>
-                            </div>
-                        </section>
-
-                        <section className="mb-10">
-                            <h2 className="font-display text-xl font-bold text-navy-900 mb-4">
-                                Nhánh thua
-                            </h2>
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                {renderMatchup(de.lr1)}
-                                {renderMatchup(de.lr2)}
-                                {renderMatchup(de.lr3)}
-                                {renderMatchup(de.lrFinal)}
-                            </div>
-                        </section>
-
-                        <section className="mb-10">
-                            <h2 className="font-display text-xl font-bold text-navy-900 mb-4">
-                                Chung kết
-                            </h2>
-                            <div className="max-w-md">{renderMatchup(de.grandFinal)}</div>
+                            <DoubleElimBracketView
+                                bracket={de}
+                                renderMatch={renderMatchup}
+                                ur2m1Node={renderUr2M1()}
+                            />
                         </section>
                     </>
                 )}
