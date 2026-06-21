@@ -635,18 +635,20 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
                             </div>
                         </section>
 
-                        <section className="mb-10">
-                            <h2 className="font-display text-xl font-bold text-navy-900 mb-4">
-                                Sơ đồ nhánh
-                                <span className="text-sm font-normal text-gray-400 ml-2">
-                                    (kéo ngang để xem)
-                                </span>
-                            </h2>
-                            <DoubleElimBracketView
-                                bracket={de}
-                                renderMatch={renderMatchup}
-                                ur2m1Node={renderUr2M1()}
-                            />
+                        <section className="mb-10 mx-[calc(50%-50vw)] px-4 sm:px-8">
+                            <div className="max-w-[1600px] mx-auto">
+                                <h2 className="font-display text-xl font-bold text-navy-900 mb-4">
+                                    Sơ đồ nhánh
+                                    <span className="text-sm font-normal text-gray-400 ml-2">
+                                        (kéo ngang nếu màn hình hẹp)
+                                    </span>
+                                </h2>
+                                <DoubleElimBracketView
+                                    bracket={de}
+                                    renderMatch={renderMatchup}
+                                    ur2m1Node={renderUr2M1()}
+                                />
+                            </div>
                         </section>
                     </>
                 )}
