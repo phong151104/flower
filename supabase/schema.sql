@@ -37,6 +37,7 @@ create table tournaments (
   name text not null,
   tournament_date date not null,
   status text not null default 'draft' check (status in ('draft','group','knockout','completed')),
+  format text not null default 'double_elim' check (format in ('group_knockout','double_elim')),
   note text,
   created_at timestamptz not null default now()
 );
@@ -55,7 +56,12 @@ create table matches (
   id uuid primary key default gen_random_uuid(),
   match_type text not null check (match_type in ('training','tournament')),
   tournament_id uuid references tournaments(id) on delete set null,
-  round text check (round in ('group','semi','third','final')),  -- null nếu training
+  -- null nếu training. Vòng giải: group/semi/third/final (thể thức cũ) +
+  -- seeding/ur1/ur2/ur3/lr1/lr2/lr3/lr_final/grand_final (double-elimination).
+  round text check (round in (
+    'group','semi','third','final',
+    'seeding','ur1','ur2','ur3','lr1','lr2','lr3','lr_final','grand_final'
+  )),
   played_at timestamptz not null default now(),
   team_a_player1 uuid not null references players(id),
   team_a_player2 uuid not null references players(id),

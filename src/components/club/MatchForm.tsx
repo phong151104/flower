@@ -13,6 +13,15 @@ const ROUND_LABEL: Record<MatchRound, string> = {
     semi: "Bán kết (Elo ×1.25)",
     third: "Tranh 3-4 (Elo ×1.10)",
     final: "Chung kết (Elo ×1.50)",
+    seeding: "Xác định seed (Elo ×1.10)",
+    ur1: "Nhánh thắng - Play-in (Elo ×1.10)",
+    ur2: "Nhánh thắng V2 (Elo ×1.20)",
+    ur3: "CK nhánh thắng (Elo ×1.35)",
+    lr1: "Nhánh thua V1 (Elo ×1.05)",
+    lr2: "Nhánh thua V2 (Elo ×1.10)",
+    lr3: "Nhánh thua V3 (Elo ×1.15)",
+    lr_final: "CK nhánh thua (Elo ×1.30)",
+    grand_final: "Chung kết (Elo ×1.50)",
 };
 
 interface MatchFormProps {

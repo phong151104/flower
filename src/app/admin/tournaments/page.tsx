@@ -32,6 +32,7 @@ export default function AdminTournamentsPage() {
     const [showForm, setShowForm] = useState(false);
     const [name, setName] = useState("");
     const [date, setDate] = useState("");
+    const [format, setFormat] = useState<"group_knockout" | "double_elim">("double_elim");
     const [error, setError] = useState("");
     const [managingId, setManagingId] = useState<string | null>(null);
 
@@ -59,6 +60,7 @@ export default function AdminTournamentsPage() {
             name: name.trim(),
             tournamentDate: date,
             status: "draft",
+            format,
         });
         setShowForm(false);
         setName("");
@@ -249,6 +251,33 @@ export default function AdminTournamentsPage() {
                                     onChange={(e) => setDate(e.target.value)}
                                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-green-500"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1.5">Thể thức</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormat("double_elim")}
+                                        className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                            format === "double_elim"
+                                                ? "bg-green-600 text-white"
+                                                : "bg-gray-800 text-gray-400"
+                                        }`}
+                                    >
+                                        Double elimination
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormat("group_knockout")}
+                                        className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                            format === "group_knockout"
+                                                ? "bg-green-600 text-white"
+                                                : "bg-gray-800 text-gray-400"
+                                        }`}
+                                    >
+                                        Bán kết / CK
+                                    </button>
+                                </div>
                             </div>
                             {error && <p className="text-red-400 text-sm">{error}</p>}
                             <button

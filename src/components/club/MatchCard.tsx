@@ -10,6 +10,15 @@ const ROUND_LABEL: Record<MatchRound, string> = {
     semi: "Bán kết",
     third: "Tranh 3-4",
     final: "Chung kết",
+    seeding: "Xác định seed",
+    ur1: "Play-in",
+    ur2: "Nhánh thắng V2",
+    ur3: "CK nhánh thắng",
+    lr1: "Nhánh thua V1",
+    lr2: "Nhánh thua V2",
+    lr3: "Nhánh thua V3",
+    lr_final: "CK nhánh thua",
+    grand_final: "Chung kết",
 };
 
 export default function MatchCard({ match }: { match: Match }) {

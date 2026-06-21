@@ -57,11 +57,31 @@ export function getH(scoreDiff: number): number {
 /** Hệ số vòng đấu (chỉ áp dụng cho trận giải; trận tập M=1). */
 export function getM(round?: MatchRound | null): number {
     switch (round) {
+        // Thể thức cũ
         case "semi":
             return 1.25;
         case "third":
             return 1.1;
         case "final":
+            return 1.5;
+        // Thể thức double-elimination
+        case "seeding":
+            return 1.1;
+        case "ur1":
+            return 1.1;
+        case "ur2":
+            return 1.2;
+        case "lr1":
+            return 1.05;
+        case "lr2":
+            return 1.1;
+        case "lr3":
+            return 1.15;
+        case "ur3":
+            return 1.35;
+        case "lr_final":
+            return 1.3;
+        case "grand_final":
             return 1.5;
         default:
             return 1.0;

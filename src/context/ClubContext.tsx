@@ -304,6 +304,7 @@ function dbToTournament(row: Record<string, unknown>): Tournament {
         name: row.name as string,
         tournamentDate: row.tournament_date as string,
         status: row.status as Tournament["status"],
+        format: (row.format as Tournament["format"]) || "group_knockout",
         note: (row.note as string) || undefined,
         createdAt: row.created_at as string,
     };
@@ -1070,6 +1071,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                     name: newTournament.name,
                     tournament_date: newTournament.tournamentDate,
                     status: newTournament.status,
+                    format: newTournament.format || "double_elim",
                     note: newTournament.note || null,
                 });
                 if (error) console.error("Tournament insert failed:", error.message);
@@ -1087,6 +1089,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 if (updates.name !== undefined) row.name = updates.name;
                 if (updates.tournamentDate !== undefined) row.tournament_date = updates.tournamentDate;
                 if (updates.status !== undefined) row.status = updates.status;
+                if (updates.format !== undefined) row.format = updates.format;
                 if (updates.note !== undefined) row.note = updates.note || null;
                 await supabase.from("tournaments").update(row).eq("id", id);
             }

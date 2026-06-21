@@ -12,6 +12,15 @@ const ROUND_LABEL: Record<MatchRound, string> = {
     semi: "Bán kết (×1.25)",
     third: "Tranh 3-4 (×1.10)",
     final: "Chung kết (×1.50)",
+    seeding: "Xác định seed (×1.10)",
+    ur1: "Nhánh thắng - Play-in (×1.10)",
+    ur2: "Nhánh thắng V2 (×1.20)",
+    ur3: "CK nhánh thắng (×1.35)",
+    lr1: "Nhánh thua V1 (×1.05)",
+    lr2: "Nhánh thua V2 (×1.10)",
+    lr3: "Nhánh thua V3 (×1.15)",
+    lr_final: "CK nhánh thua (×1.30)",
+    grand_final: "Chung kết (×1.50)",
 };
 
 export default function AdminMatchesPage() {

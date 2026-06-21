@@ -22,7 +22,22 @@ export interface Player {
     createdAt: string;
 }
 
-export type MatchRound = "group" | "semi" | "third" | "final";
+export type MatchRound =
+    // Thể thức cũ (group_knockout)
+    | "group"
+    | "semi"
+    | "third"
+    | "final"
+    // Thể thức double-elimination
+    | "seeding" // vòng xác định seed (nhất gặp nhất...)
+    | "ur1" // play-in nhánh thắng (seed3v6, seed4v5)
+    | "ur2" // nhánh thắng vòng 2 (seed1/seed2)
+    | "ur3" // chung kết nhánh thắng
+    | "lr1" // nhánh thua vòng 1
+    | "lr2"
+    | "lr3"
+    | "lr_final" // chung kết nhánh thua
+    | "grand_final"; // chung kết
 
 export interface EloChange {
     playerId: string;
@@ -75,11 +90,14 @@ export interface TrainingVote {
 
 export type TournamentStatus = "draft" | "group" | "knockout" | "completed";
 
+export type TournamentFormat = "group_knockout" | "double_elim";
+
 export interface Tournament {
     id: string;
     name: string;
     tournamentDate: string;
     status: TournamentStatus;
+    format: TournamentFormat;
     note?: string;
     createdAt: string;
 }
