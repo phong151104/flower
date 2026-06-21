@@ -453,6 +453,23 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                     setMatches((prev) => prev.filter((x) => x.id !== id));
                 }
             })
+            .on("postgres_changes", { event: "*", schema: "public", table: "training_sessions" }, (payload) => {
+                if (payload.eventType === "INSERT") {
+                    const s = dbToSession(payload.new as Record<string, unknown>);
+                    setTrainingSessions((prev) =>
+                        prev.some((x) => x.id === s.id) ? prev : [s, ...prev]
+                    );
+                } else if (payload.eventType === "UPDATE") {
+                    const s = dbToSession(payload.new as Record<string, unknown>);
+                    setTrainingSessions((prev) => prev.map((x) => (x.id === s.id ? s : x)));
+                } else if (payload.eventType === "DELETE") {
+                    const id = (payload.old as Record<string, unknown>).id as string;
+                    setTrainingSessions((prev) => prev.filter((x) => x.id !== id));
+                    setTrainingVotes((prev) => prev.filter((x) => x.sessionId !== id));
+                    setSessionCosts((prev) => prev.filter((x) => x.sessionId !== id));
+                    setSessionPayments((prev) => prev.filter((x) => x.sessionId !== id));
+                }
+            })
             .on("postgres_changes", { event: "*", schema: "public", table: "training_votes" }, (payload) => {
                 if (payload.eventType === "INSERT") {
                     const v = dbToVote(payload.new as Record<string, unknown>);

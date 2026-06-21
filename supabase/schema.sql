@@ -197,6 +197,7 @@ create policy "anon full access" on announcements for all using (true) with chec
 -- Realtime cho các bảng cần đồng bộ giữa nhiều thiết bị
 alter publication supabase_realtime add table players;
 alter publication supabase_realtime add table matches;
+alter publication supabase_realtime add table training_sessions;
 alter publication supabase_realtime add table training_votes;
 alter publication supabase_realtime add table session_costs;
 alter publication supabase_realtime add table session_payments;
