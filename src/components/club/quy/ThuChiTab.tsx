@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useClub } from "@/context/ClubContext";
 import type { FundDrive } from "@/types/club";
 import { getDriveSummary, driveMemberAmount, formatVND } from "@/lib/finance";
-import { Plus, Trash2, X, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff } from "lucide-react";
 
 function monthLabel(month: string) {
     return `Tháng ${Number(month.slice(5))}/${month.slice(0, 4)}`;
@@ -124,190 +124,245 @@ function ExpenseTable({ month }: { month: string }) {
     );
 }
 
-// ---- Bảng THU (đợt thu: quỹ tháng hoặc tùy chỉnh) ----
-function DuesTable({ drive }: { drive: FundDrive }) {
+// ---- Lưới THU: mỗi đợt thu = 1 cặp cột [Đã đóng | Tiền] ----
+function DuesGrid({ month, drives }: { month?: string; drives: FundDrive[] }) {
     const {
         players,
         fundDriveMembers,
+        addFundDrive,
         updateFundDrive,
         deleteFundDrive,
         addFundDriveMember,
-        removeFundDriveMember,
         setFundDriveMemberPaid,
         setFundDriveMemberAmount,
     } = useClub();
-    const [adding, setAdding] = useState(false);
 
-    const playerName = (id: string) => players.find((p) => p.id === id)?.name || "(đã xóa)";
-    const members = fundDriveMembers
-        .filter((m) => m.driveId === drive.id)
-        .sort((a, b) => playerName(a.playerId).localeCompare(playerName(b.playerId), "vi"));
-    const memberIds = new Set(members.map((m) => m.playerId));
-    const remaining = [...players]
-        .filter((p) => p.isActive && !memberIds.has(p.id))
+    const members = [...players]
+        .filter((p) => p.isActive)
         .sort((a, b) => a.name.localeCompare(b.name, "vi"));
-    const summary = getDriveSummary(drive, fundDriveMembers);
+    const memberOf = (driveId: string, playerId: string) =>
+        fundDriveMembers.find((m) => m.driveId === driveId && m.playerId === playerId);
 
-    return (
-        <table className="w-full text-sm">
-            <thead>
-                <tr className="border-b border-navy-100 text-gray-400 text-left">
-                    <th className="px-3 py-2 font-medium">Thành viên</th>
-                    <th className="px-3 py-2 font-medium text-center w-20">Đã đóng</th>
-                    <th className="px-3 py-2 font-medium text-right w-32">Tiền</th>
-                    <th className="w-9"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {members.map((m) => (
-                    <tr key={m.id} className="border-b border-navy-50">
-                        <td className="px-3 py-1.5 font-medium text-navy-900">
-                            {playerName(m.playerId)}
-                        </td>
-                        <td className="px-3 py-1.5 text-center">
-                            <input
-                                type="checkbox"
-                                checked={m.paid}
-                                onChange={(e) =>
-                                    setFundDriveMemberPaid(drive.id, m.playerId, e.target.checked)
-                                }
-                                className="w-4 h-4 accent-court-600 cursor-pointer"
-                            />
-                        </td>
-                        <td className="px-2 py-1">
-                            <input
-                                key={`${m.id}-${driveMemberAmount(drive, m)}`}
-                                defaultValue={String(driveMemberAmount(drive, m))}
-                                inputMode="numeric"
-                                onBlur={(e) => {
-                                    const v = parseInt(e.target.value.replace(/\D/g, ""), 10);
-                                    if (!isNaN(v) && v !== driveMemberAmount(drive, m))
-                                        setFundDriveMemberAmount(drive.id, m.playerId, v);
-                                }}
-                                className="w-full px-2 py-1 text-right font-mono bg-transparent rounded hover:bg-navy-50 focus:bg-white focus:border focus:border-court-400 focus:outline-none"
-                            />
-                        </td>
-                        <td className="px-1">
-                            <button
-                                onClick={() => removeFundDriveMember(drive.id, m.playerId)}
-                                className="text-gray-300 hover:text-red-500"
-                            >
-                                <X size={14} />
-                            </button>
-                        </td>
-                    </tr>
-                ))}
-                {adding && remaining.length > 0 && (
-                    <tr className="border-b border-navy-50 bg-navy-50/40">
-                        <td className="px-2 py-1" colSpan={4}>
-                            <select
-                                autoFocus
-                                value=""
-                                onChange={(e) => {
-                                    if (e.target.value)
-                                        addFundDriveMember(drive.id, e.target.value);
-                                    setAdding(false);
-                                }}
-                                onBlur={() => setAdding(false)}
-                                className="px-2 py-1 bg-white border border-navy-200 rounded focus:outline-none focus:border-court-500"
-                            >
-                                <option value="">Chọn người thêm...</option>
-                                {remaining.map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </td>
-                    </tr>
-                )}
-            </tbody>
-            <tfoot>
-                <tr className="font-semibold text-navy-900">
-                    <td className="px-3 py-2">
-                        Tổng thu tháng
-                        {remaining.length > 0 && (
-                            <button
-                                onClick={() => setAdding(true)}
-                                className="ml-2 text-xs font-normal text-court-600 hover:text-court-700 inline-flex items-center gap-1"
-                            >
-                                <UserPlus size={13} /> Thêm người
-                            </button>
-                        )}
-                    </td>
-                    <td></td>
-                    <td className="px-3 py-2 text-right font-mono text-court-600">
-                        {formatVND(summary.collected)}
-                    </td>
-                    <td className="px-1">
-                        <button
-                            onClick={() => {
-                                if (confirm(`Xóa đợt thu "${drive.title}"?`))
-                                    deleteFundDrive(drive.id);
-                            }}
-                            className="text-gray-300 hover:text-red-500"
-                            title="Xóa đợt thu"
-                        >
-                            <Trash2 size={14} />
-                        </button>
-                    </td>
-                </tr>
-                <tr className="text-xs text-gray-400">
-                    <td className="px-3 pb-2" colSpan={4}>
-                        Mức mặc định:{" "}
-                        <input
-                            key={`def-${drive.id}-${drive.amount}`}
-                            defaultValue={String(drive.amount)}
-                            inputMode="numeric"
-                            onBlur={(e) => {
-                                const v = parseInt(e.target.value.replace(/\D/g, ""), 10);
-                                if (!isNaN(v) && v !== drive.amount)
-                                    updateFundDrive(drive.id, { amount: v });
-                            }}
-                            className="w-24 px-2 py-0.5 text-right font-mono bg-navy-50 rounded focus:bg-white focus:outline-none focus:border focus:border-court-400"
-                        />{" "}
-                        đ/người (ô tiền để trống/đổi để nhập riêng từng người)
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    );
-}
-
-function MonthBlock({ month, drive }: { month: string; drive?: FundDrive }) {
-    const { players, addFundDrive } = useClub();
-
-    const createDues = async () => {
-        const ids = players.filter((p) => p.isActive).map((p) => p.id);
+    const addDot = async () => {
+        const ids = members.map((p) => p.id);
+        const title = month
+            ? drives.length === 0
+                ? "Quỹ tháng"
+                : `Đợt ${drives.length + 1}`
+            : "Quỹ giải";
         await addFundDrive(
-            { title: monthLabel(month), kind: "monthly", amount: 0, period: month },
+            { title, kind: month ? "monthly" : "custom", amount: 0, period: month },
             ids
         );
     };
 
+    const grandTotal = drives.reduce(
+        (s, d) => s + getDriveSummary(d, fundDriveMembers).collected,
+        0
+    );
+
     return (
-        <div className="bg-white rounded-2xl shadow-card p-5">
-            <h3 className="font-bold text-navy-900 mb-3">{monthLabel(month)}</h3>
-            <div className="grid lg:grid-cols-2 gap-6">
-                <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Chi</p>
-                    <ExpenseTable month={month} />
+        <div>
+            {drives.length === 0 ? (
+                <p className="text-sm text-gray-400 mb-2">Chưa có đợt thu nào trong tháng.</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="text-sm border-collapse w-full min-w-[360px]">
+                        <thead>
+                            <tr>
+                                <th
+                                    rowSpan={2}
+                                    className="sticky left-0 z-10 bg-navy-50 border-b-2 border-r border-navy-200 px-3 py-2 text-left font-semibold text-gray-500 min-w-[110px] align-bottom"
+                                >
+                                    Thành viên
+                                </th>
+                                {drives.map((d) => (
+                                    <th
+                                        key={d.id}
+                                        colSpan={2}
+                                        className="border-b border-l border-navy-200 px-2 py-1.5 bg-navy-50/60"
+                                    >
+                                        <div className="flex items-center justify-center gap-1">
+                                            <input
+                                                key={`t-${d.id}-${d.title}`}
+                                                defaultValue={d.title}
+                                                onBlur={(e) =>
+                                                    e.target.value.trim() &&
+                                                    e.target.value !== d.title &&
+                                                    updateFundDrive(d.id, {
+                                                        title: e.target.value.trim(),
+                                                    })
+                                                }
+                                                className="w-28 px-1.5 py-0.5 text-center font-semibold text-navy-900 bg-transparent rounded hover:bg-white focus:bg-white focus:border focus:border-court-400 focus:outline-none"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm(`Xóa đợt "${d.title}"?`))
+                                                        deleteFundDrive(d.id);
+                                                }}
+                                                className="text-gray-300 hover:text-red-500"
+                                            >
+                                                <Trash2 size={13} />
+                                            </button>
+                                        </div>
+                                        <div className="text-[10px] text-gray-400 font-normal mt-0.5">
+                                            mặc định{" "}
+                                            <input
+                                                key={`a-${d.id}-${d.amount}`}
+                                                defaultValue={String(d.amount)}
+                                                inputMode="numeric"
+                                                onBlur={(e) => {
+                                                    const v = parseInt(
+                                                        e.target.value.replace(/\D/g, ""),
+                                                        10
+                                                    );
+                                                    if (!isNaN(v) && v !== d.amount)
+                                                        updateFundDrive(d.id, { amount: v });
+                                                }}
+                                                className="w-16 px-1 text-right font-mono bg-white/70 rounded focus:bg-white focus:outline-none"
+                                            />
+                                            đ
+                                        </div>
+                                    </th>
+                                ))}
+                            </tr>
+                            <tr className="text-gray-400">
+                                {drives.map((d) => (
+                                    <Fragment key={d.id}>
+                                        <th className="border-b-2 border-l border-navy-200 px-2 py-1 font-medium text-center w-16">
+                                            Đã đóng
+                                        </th>
+                                        <th className="border-b-2 border-navy-200 px-2 py-1 font-medium text-right w-24">
+                                            Tiền
+                                        </th>
+                                    </Fragment>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {members.map((p) => (
+                                <tr key={p.id} className="border-b border-navy-50">
+                                    <td className="sticky left-0 z-10 bg-white border-r border-navy-200 px-3 py-1.5 font-medium text-navy-900">
+                                        {p.name}
+                                    </td>
+                                    {drives.map((d) => {
+                                        const m = memberOf(d.id, p.id);
+                                        return (
+                                            <Fragment key={d.id}>
+                                                <td className="border-l border-navy-200 px-2 py-1 text-center">
+                                                    {m ? (
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={m.paid}
+                                                            onChange={(e) =>
+                                                                setFundDriveMemberPaid(
+                                                                    d.id,
+                                                                    p.id,
+                                                                    e.target.checked
+                                                                )
+                                                            }
+                                                            className="w-4 h-4 accent-court-600 cursor-pointer"
+                                                        />
+                                                    ) : (
+                                                        <button
+                                                            onClick={() =>
+                                                                addFundDriveMember(d.id, p.id)
+                                                            }
+                                                            className="text-gray-300 hover:text-court-600"
+                                                            title="Thêm vào đợt này"
+                                                        >
+                                                            <Plus size={13} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                                <td className="px-1 py-1">
+                                                    {m && (
+                                                        <input
+                                                            key={`m-${m.id}-${driveMemberAmount(d, m)}`}
+                                                            defaultValue={String(
+                                                                driveMemberAmount(d, m)
+                                                            )}
+                                                            inputMode="numeric"
+                                                            onBlur={(e) => {
+                                                                const v = parseInt(
+                                                                    e.target.value.replace(
+                                                                        /\D/g,
+                                                                        ""
+                                                                    ),
+                                                                    10
+                                                                );
+                                                                if (
+                                                                    !isNaN(v) &&
+                                                                    v !== driveMemberAmount(d, m)
+                                                                )
+                                                                    setFundDriveMemberAmount(
+                                                                        d.id,
+                                                                        p.id,
+                                                                        v
+                                                                    );
+                                                            }}
+                                                            className="w-full px-1.5 py-1 text-right font-mono bg-transparent rounded hover:bg-navy-50 focus:bg-white focus:border focus:border-court-400 focus:outline-none"
+                                                        />
+                                                    )}
+                                                </td>
+                                            </Fragment>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                            <tr className="bg-navy-50 border-t-2 border-navy-200 font-bold text-navy-900">
+                                <td className="sticky left-0 z-10 bg-navy-50 border-r border-navy-200 px-3 py-2">
+                                    Tổng thu
+                                </td>
+                                {drives.map((d) => (
+                                    <Fragment key={d.id}>
+                                        <td className="border-l border-navy-200"></td>
+                                        <td className="px-2 py-2 text-right font-mono text-court-600">
+                                            {formatVND(
+                                                getDriveSummary(d, fundDriveMembers).collected
+                                            )}
+                                        </td>
+                                    </Fragment>
+                                ))}
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase mb-1">
-                        Thu (quỹ tháng)
-                    </p>
-                    {drive ? (
-                        <DuesTable drive={drive} />
-                    ) : (
-                        <button
-                            onClick={createDues}
-                            className="mt-2 flex items-center gap-1.5 text-sm font-medium text-court-600 hover:text-court-700"
-                        >
-                            <Plus size={15} /> Tạo quỹ tháng này
-                        </button>
-                    )}
-                </div>
+            )}
+
+            <div className="flex items-center justify-between flex-wrap gap-2 mt-3">
+                <button
+                    onClick={addDot}
+                    className="flex items-center gap-1.5 text-sm font-medium text-court-600 hover:text-court-700"
+                >
+                    <Plus size={15} /> Thêm đợt thu
+                </button>
+                {drives.length > 0 && (
+                    <span className="text-sm text-gray-500">
+                        Tổng thu {month ? "tháng" : ""}:{" "}
+                        <span className="font-semibold text-court-600">
+                            {formatVND(grandTotal)}
+                        </span>
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function MonthBlock({ month, drives }: { month: string; drives: FundDrive[] }) {
+    return (
+        <div className="bg-white rounded-2xl shadow-card p-5 space-y-5">
+            <h3 className="font-bold text-navy-900">{monthLabel(month)}</h3>
+            <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Chi</p>
+                <ExpenseTable month={month} />
+            </div>
+            <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase mb-2">
+                    Thu (quỹ tháng &amp; các đợt)
+                </p>
+                <DuesGrid month={month} drives={drives} />
             </div>
         </div>
     );
@@ -318,11 +373,12 @@ export default function ThuChiTab() {
     const [showAddMonth, setShowAddMonth] = useState(false);
     const [newMonth, setNewMonth] = useState(new Date().toISOString().slice(0, 7));
     const [newAmount, setNewAmount] = useState("");
+    const [showPast, setShowPast] = useState(false);
 
-    // Các tháng = union (kỳ quỹ tháng) ∪ (tháng có khoản chi)
+    // Các tháng = union (kỳ của đợt thu có period) ∪ (tháng có khoản chi)
     const months = useMemo(() => {
         const set = new Set<string>();
-        fundDrives.filter((d) => d.kind === "monthly").forEach((d) => set.add(d.period || ""));
+        fundDrives.forEach((d) => d.period && set.add(d.period));
         transactions
             .filter((t) => t.type === "expense")
             .forEach((t) => set.add((t.date || "").slice(0, 7)));
@@ -331,27 +387,19 @@ export default function ThuChiTab() {
             .sort((a, b) => b.localeCompare(a));
     }, [fundDrives, transactions]);
 
-    const monthlyDrive = (month: string) =>
-        fundDrives.find((d) => d.kind === "monthly" && d.period === month);
-    const customDrives = fundDrives.filter((d) => d.kind !== "monthly");
+    const drivesForMonth = (month: string) => fundDrives.filter((d) => d.period === month);
+    const noPeriodDrives = fundDrives.filter((d) => !d.period);
 
-    // Tách tháng đã qua / tháng hiện tại + sau này
     const curMonth = new Date().toISOString().slice(0, 7);
     const pastMonths = months.filter((m) => m < curMonth);
     const recentMonths = months.filter((m) => m >= curMonth);
-    const [showPast, setShowPast] = useState(false);
 
     const addMonth = async () => {
         if (!newMonth) return;
         const ids = players.filter((p) => p.isActive).map((p) => p.id);
         const amt = parseInt(newAmount.replace(/\D/g, ""), 10);
         await addFundDrive(
-            {
-                title: monthLabel(newMonth),
-                kind: "monthly",
-                amount: isNaN(amt) ? 0 : amt,
-                period: newMonth,
-            },
+            { title: "Quỹ tháng", kind: "monthly", amount: isNaN(amt) ? 0 : amt, period: newMonth },
             ids
         );
         setShowAddMonth(false);
@@ -412,7 +460,7 @@ export default function ThuChiTab() {
                         </div>
                     )}
                     {recentMonths.map((m) => (
-                        <MonthBlock key={m} month={m} drive={monthlyDrive(m)} />
+                        <MonthBlock key={m} month={m} drives={drivesForMonth(m)} />
                     ))}
 
                     {pastMonths.length > 0 && (
@@ -422,12 +470,14 @@ export default function ThuChiTab() {
                                 className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-court-700"
                             >
                                 {showPast ? <EyeOff size={15} /> : <Eye size={15} />}
-                                {showPast ? "Ẩn tháng đã qua" : `Hiện tháng đã qua (${pastMonths.length})`}
+                                {showPast
+                                    ? "Ẩn tháng đã qua"
+                                    : `Hiện tháng đã qua (${pastMonths.length})`}
                             </button>
                             {showPast && (
                                 <div className="space-y-6 mt-4 opacity-90">
                                     {pastMonths.map((m) => (
-                                        <MonthBlock key={m} month={m} drive={monthlyDrive(m)} />
+                                        <MonthBlock key={m} month={m} drives={drivesForMonth(m)} />
                                     ))}
                                 </div>
                             )}
@@ -436,20 +486,11 @@ export default function ThuChiTab() {
                 </>
             )}
 
-            {/* Đợt thu khác (quỹ giải / tùy chỉnh) */}
-            {customDrives.length > 0 && (
-                <div>
-                    <h2 className="font-display text-xl font-bold text-navy-900 mb-3">
-                        Đợt thu khác (quỹ giải...)
-                    </h2>
-                    <div className="space-y-4">
-                        {customDrives.map((d) => (
-                            <div key={d.id} className="bg-white rounded-2xl shadow-card p-5">
-                                <h3 className="font-bold text-navy-900 mb-3">{d.title}</h3>
-                                <DuesTable drive={d} />
-                            </div>
-                        ))}
-                    </div>
+            {/* Đợt thu không theo tháng (quỹ giải / khác) */}
+            {noPeriodDrives.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-card p-5">
+                    <h3 className="font-bold text-navy-900 mb-3">Đợt thu khác (quỹ giải...)</h3>
+                    <DuesGrid drives={noPeriodDrives} />
                 </div>
             )}
         </div>
