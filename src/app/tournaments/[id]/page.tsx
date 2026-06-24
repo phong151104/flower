@@ -258,7 +258,7 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
                                 <tr className="text-gray-400 text-left text-xs">
                                     <th className="pb-2 font-medium">Đội</th>
                                     <th className="pb-2 font-medium text-center">Trận</th>
-                                    <th className="pb-2 font-medium text-center">T-B</th>
+                                    <th className="pb-2 font-medium text-center">W-L</th>
                                     <th className="pb-2 font-medium text-center">+/-</th>
                                 </tr>
                             </thead>

@@ -14,13 +14,61 @@ import {
     getRankedPlayers,
     getRecentForm,
 } from "@/lib/stats";
-import { ArrowLeft, TrendingUp, Swords, Users, Handshake } from "lucide-react";
+import type { PlayerMatchView } from "@/lib/stats";
+import { ArrowLeft, TrendingUp, Swords, Users, Handshake, CalendarDays } from "lucide-react";
 
 const STATUS_BADGE = {
     official: null,
     provisional: { label: "Tạm tính (<12 trận)", cls: "bg-amber-100 text-amber-700" },
     inactive: { label: "Nghỉ dài (>3 tháng)", cls: "bg-gray-200 text-gray-500" },
 } as const;
+
+function matchDateKey(playedAt: string) {
+    const d = new Date(playedAt);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function formatGroupDate(dateKey: string) {
+    return new Date(`${dateKey}T00:00:00`).toLocaleDateString("vi-VN", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
+}
+
+function formatEloDelta(delta: number) {
+    const rounded = Math.round(delta * 10) / 10;
+    return `${rounded > 0 ? "+" : ""}${rounded.toFixed(1)} Elo`;
+}
+
+function eloDeltaClass(delta: number) {
+    if (delta > 0.05) return "bg-court-100 text-court-700";
+    if (delta < -0.05) return "bg-red-100 text-red-600";
+    return "bg-gray-100 text-gray-500";
+}
+
+function groupPlayerMatchesByDate(matches: PlayerMatchView[]) {
+    const map = new Map<string, PlayerMatchView[]>();
+    for (const matchView of matches) {
+        const key = matchDateKey(matchView.match.playedAt);
+        map.set(key, [...(map.get(key) || []), matchView]);
+    }
+    return Array.from(map.entries()).map(([dateKey, items]) => {
+        const wins = items.filter((item) => item.won).length;
+        const eloDelta = items.reduce((sum, item) => sum + item.delta, 0);
+        return {
+            dateKey,
+            items,
+            wins,
+            losses: items.length - wins,
+            eloDelta,
+        };
+    });
+}
 
 export default function PlayerProfilePage({ params }: { params: { id: string } }) {
     const { id } = params;
@@ -62,6 +110,8 @@ export default function PlayerProfilePage({ params }: { params: { id: string } }
     const winRate =
         player.matchesPlayed > 0 ? Math.round((player.wins / player.matchesPlayed) * 100) : 0;
     const playerMatches = getPlayerMatches(id, matches);
+    const recentPlayerMatches = playerMatches.slice(0, 20);
+    const matchGroups = groupPlayerMatchesByDate(recentPlayerMatches);
     const h2h = getHeadToHead(id, matches);
     const { best: bestPartner, all: partnerStats } = getPartnerStats(id, matches);
     const form = getRecentForm(id, matches);
@@ -204,7 +254,7 @@ export default function PlayerProfilePage({ params }: { params: { id: string } }
                                             {name(s.partnerId)}
                                         </Link>
                                         <span className="text-gray-500 font-mono text-xs">
-                                            {s.wins}T - {s.losses}B (
+                                            {s.wins}W - {s.losses}L (
                                             {Math.round(s.winRate * 100)}%)
                                         </span>
                                     </div>
@@ -235,11 +285,11 @@ export default function PlayerProfilePage({ params }: { params: { id: string } }
                                         </Link>
                                         <span className="font-mono text-xs">
                                             <span className="text-court-600 font-semibold">
-                                                {h.wins}T
+                                                {h.wins}W
                                             </span>
                                             <span className="text-gray-400"> - </span>
                                             <span className="text-red-500 font-semibold">
-                                                {h.losses}B
+                                                {h.losses}L
                                             </span>
                                         </span>
                                     </div>
@@ -258,9 +308,42 @@ export default function PlayerProfilePage({ params }: { params: { id: string } }
                     {playerMatches.length === 0 ? (
                         <p className="text-gray-400 text-sm">Chưa đánh trận nào</p>
                     ) : (
-                        <div className="space-y-3">
-                            {playerMatches.slice(0, 20).map((v) => (
-                                <MatchCard key={v.match.id} match={v.match} />
+                        <div className="space-y-6">
+                            {matchGroups.map(({ dateKey, items, wins, losses, eloDelta }) => (
+                                <section key={dateKey} className="space-y-2.5">
+                                    <div className="flex items-center justify-between gap-3 rounded-xl border border-navy-200 bg-navy-50/80 px-4 py-3">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <CalendarDays size={18} className="text-court-600 shrink-0" />
+                                            <div className="min-w-0">
+                                                <h3 className="font-semibold text-navy-900 truncate">
+                                                    {formatGroupDate(dateKey)}
+                                                </h3>
+                                                <p className="text-xs text-gray-400">
+                                                    {items.length} trận trong ngày
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
+                                            <span className="rounded-full bg-court-100 px-2.5 py-1 font-semibold text-court-700">
+                                                {wins}W
+                                            </span>
+                                            <span className="rounded-full bg-red-100 px-2.5 py-1 font-semibold text-red-600">
+                                                {losses}L
+                                            </span>
+                                            <span
+                                                className={`rounded-full px-2.5 py-1 font-semibold ${eloDeltaClass(eloDelta)}`}
+                                                title="Elo thay đổi trong ngày"
+                                            >
+                                                {formatEloDelta(eloDelta)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {items.map((v) => (
+                                            <MatchCard key={v.match.id} match={v.match} hideDate />
+                                        ))}
+                                    </div>
+                                </section>
                             ))}
                         </div>
                     )}

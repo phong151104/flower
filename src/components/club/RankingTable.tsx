@@ -97,7 +97,7 @@ export default function RankingTable({ limit }: { limit?: number }) {
                             <th className="px-4 py-3 font-medium text-right">Elo</th>
                             <th className="px-4 py-3 font-medium text-right">Tăng/giảm</th>
                             <th className="px-4 py-3 font-medium text-right hidden sm:table-cell">Trận</th>
-                            <th className="px-4 py-3 font-medium text-right hidden sm:table-cell">T/B</th>
+                            <th className="px-4 py-3 font-medium text-right hidden sm:table-cell">W/L</th>
                             <th className="px-4 py-3 font-medium text-right hidden md:table-cell">Tỷ lệ thắng</th>
                             <th className="px-4 py-3 font-medium hidden lg:table-cell">Phong độ</th>
                         </tr>
