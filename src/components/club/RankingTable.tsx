@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { useClub } from "@/context/ClubContext";
 import { getRankedPlayers, getRecentForm } from "@/lib/stats";
@@ -13,6 +14,47 @@ const STATUS_LABEL: Record<RankStatus, { label: string; cls: string } | null> = 
 };
 
 const RANK_COLORS = ["text-ball-500", "text-gray-400", "text-amber-600"];
+const TIER_SIZE = 4;
+const TIER_STYLES = [
+    {
+        band: "bg-court-50 text-court-800 border-court-100",
+        rowBg: "bg-court-50/35 hover:bg-court-50",
+        row: "border-l-court-500",
+        dot: "bg-court-500",
+    },
+    {
+        band: "bg-ball-50 text-ball-700 border-ball-100",
+        rowBg: "bg-ball-50/35 hover:bg-ball-50",
+        row: "border-l-ball-500",
+        dot: "bg-ball-500",
+    },
+    {
+        band: "bg-navy-50 text-navy-700 border-navy-100",
+        rowBg: "bg-navy-50/80 hover:bg-navy-100/80",
+        row: "border-l-navy-400",
+        dot: "bg-navy-400",
+    },
+    {
+        band: "bg-red-50 text-red-700 border-red-100",
+        rowBg: "bg-red-50/30 hover:bg-red-50",
+        row: "border-l-red-400",
+        dot: "bg-red-400",
+    },
+];
+
+function rankTier(rank: number) {
+    return Math.floor((rank - 1) / TIER_SIZE) + 1;
+}
+
+function tierStyle(tier: number) {
+    return TIER_STYLES[(tier - 1) % TIER_STYLES.length];
+}
+
+function tierRange(tier: number, totalRows: number) {
+    const start = (tier - 1) * TIER_SIZE + 1;
+    const end = Math.min(tier * TIER_SIZE, totalRows);
+    return `Hạng ${start}-${end}`;
+}
 
 function formatEloDelta(delta: number) {
     const rounded = Math.round(delta);
@@ -34,6 +76,7 @@ export default function RankingTable({ limit }: { limit?: number }) {
 
     const ranked = getRankedPlayers(players, matches);
     const rows = limit ? ranked.slice(0, limit) : ranked;
+    const showTierBands = !limit;
 
     if (rows.length === 0) {
         return (
@@ -68,11 +111,33 @@ export default function RankingTable({ limit }: { limit?: number }) {
                             const form = getRecentForm(p.id, matches);
                             const badge = STATUS_LABEL[status];
                             const eloDelta = p.currentElo - p.initialElo;
+                            const tier = rankTier(rank);
+                            const style = tierStyle(tier);
+                            const showTierHeader = showTierBands && (rank - 1) % TIER_SIZE === 0;
                             return (
-                                <tr
-                                    key={p.id}
-                                    className="border-b border-navy-100 last:border-0 hover:bg-court-50 transition-colors"
-                                >
+                                <Fragment key={p.id}>
+                                    {showTierHeader && (
+                                        <tr className={`border-y ${style.band}`}>
+                                            <td colSpan={8} className="px-4 py-2">
+                                                <div className="flex items-center gap-2 text-xs font-semibold uppercase">
+                                                    <span
+                                                        className={`h-2 w-2 rounded-full ${style.dot}`}
+                                                    />
+                                                    <span>Tier {tier}</span>
+                                                    <span className="text-gray-400 font-normal normal-case">
+                                                        {tierRange(tier, rows.length)}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                    <tr
+                                        className={`border-b border-navy-100 last:border-0 transition-colors ${
+                                            showTierBands
+                                                ? `border-l-4 ${style.row} ${style.rowBg}`
+                                                : "hover:bg-court-50"
+                                        }`}
+                                    >
                                     <td className="px-4 py-3">
                                         {rank <= 3 ? (
                                             <Medal size={18} className={RANK_COLORS[rank - 1]} />
@@ -141,6 +206,7 @@ export default function RankingTable({ limit }: { limit?: number }) {
                                         </div>
                                     </td>
                                 </tr>
+                                </Fragment>
                             );
                         })}
                     </tbody>
