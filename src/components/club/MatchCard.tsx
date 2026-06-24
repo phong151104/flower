@@ -21,7 +21,7 @@ const ROUND_LABEL: Record<MatchRound, string> = {
     grand_final: "Chung kết",
 };
 
-export default function MatchCard({ match }: { match: Match }) {
+export default function MatchCard({ match, hideDate = false }: { match: Match; hideDate?: boolean }) {
     const { players, tournaments } = useClub();
 
     const name = (id: string) => players.find((p) => p.id === id)?.name || "(đã xóa)";
@@ -80,7 +80,7 @@ export default function MatchCard({ match }: { match: Match }) {
                         </>
                     )}
                 </span>
-                <span>{date}</span>
+                {!hideDate && <span>{date}</span>}
             </div>
 
             <div className="flex items-center gap-3">
