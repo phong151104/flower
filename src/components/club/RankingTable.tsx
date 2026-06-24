@@ -14,6 +14,17 @@ const STATUS_LABEL: Record<RankStatus, { label: string; cls: string } | null> = 
 
 const RANK_COLORS = ["text-ball-500", "text-gray-400", "text-amber-600"];
 
+function formatEloDelta(delta: number) {
+    const rounded = Math.round(delta);
+    return rounded > 0 ? `+${rounded}` : String(rounded);
+}
+
+function deltaClass(delta: number) {
+    if (delta > 0.5) return "text-court-600";
+    if (delta < -0.5) return "text-red-500";
+    return "text-gray-400";
+}
+
 export default function RankingTable({ limit }: { limit?: number }) {
     const { players, matches, isLoading } = useClub();
 
@@ -41,6 +52,7 @@ export default function RankingTable({ limit }: { limit?: number }) {
                             <th className="px-4 py-3 font-medium w-14">#</th>
                             <th className="px-4 py-3 font-medium">Người chơi</th>
                             <th className="px-4 py-3 font-medium text-right">Elo</th>
+                            <th className="px-4 py-3 font-medium text-right">Tăng/giảm</th>
                             <th className="px-4 py-3 font-medium text-right hidden sm:table-cell">Trận</th>
                             <th className="px-4 py-3 font-medium text-right hidden sm:table-cell">T/B</th>
                             <th className="px-4 py-3 font-medium text-right hidden md:table-cell">Tỷ lệ thắng</th>
@@ -55,6 +67,7 @@ export default function RankingTable({ limit }: { limit?: number }) {
                                     : 0;
                             const form = getRecentForm(p.id, matches);
                             const badge = STATUS_LABEL[status];
+                            const eloDelta = p.currentElo - p.initialElo;
                             return (
                                 <tr
                                     key={p.id}
@@ -89,6 +102,12 @@ export default function RankingTable({ limit }: { limit?: number }) {
                                     </td>
                                     <td className="px-4 py-3 text-right font-mono font-semibold text-court-700">
                                         {Math.round(p.currentElo)}
+                                    </td>
+                                    <td
+                                        className={`px-4 py-3 text-right font-mono font-semibold ${deltaClass(eloDelta)}`}
+                                        title={`Elo khởi điểm: ${Math.round(p.initialElo)}`}
+                                    >
+                                        {formatEloDelta(eloDelta)}
                                     </td>
                                     <td className="px-4 py-3 text-right hidden sm:table-cell">
                                         {p.matchesPlayed}
