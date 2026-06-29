@@ -19,7 +19,6 @@ import { ArrowLeft, TrendingUp, Swords, Users, Handshake, CalendarDays } from "l
 
 const STATUS_BADGE = {
     official: null,
-    provisional: { label: "Tạm tính (<12 trận)", cls: "bg-amber-100 text-amber-700" },
     inactive: { label: "Nghỉ dài (>3 tháng)", cls: "bg-gray-200 text-gray-500" },
 } as const;
 

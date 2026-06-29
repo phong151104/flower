@@ -139,7 +139,7 @@ export function compareRanking(a: Player, b: Player, matches: Match[]): number {
     return b.matchesPlayed - a.matchesPlayed;
 }
 
-/** BXH đã sắp xếp; người inactive/provisional vẫn có mặt kèm trạng thái. */
+/** BXH đã sắp xếp; người nghỉ dài vẫn có mặt kèm trạng thái. */
 export function getRankedPlayers(players: Player[], matches: Match[]) {
     const sorted = [...players].sort((a, b) => compareRanking(a, b, matches));
     return sorted.map((p, i) => ({

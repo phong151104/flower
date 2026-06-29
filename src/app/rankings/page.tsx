@@ -14,7 +14,7 @@ export default function RankingsPage() {
                 <div className="mb-8 animate-fade-in">
                     <h1 className="section-heading">Bảng xếp hạng Elo</h1>
                     <p className="text-gray-500 mt-2">
-                        Xếp hạng theo Elo cá nhân — cần tối thiểu 12 trận để được xếp hạng chính thức.
+                        Xếp hạng Elo chính thức của CLB, cập nhật sau mỗi trận.
                     </p>
                 </div>
                 <RankingsView />

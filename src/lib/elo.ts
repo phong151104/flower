@@ -17,7 +17,6 @@ export const TIER_ELO: Record<number, number> = {
     4: 1000,
 };
 
-export const MIN_OFFICIAL_MATCHES = 12;
 export const INACTIVE_MONTHS = 3;
 export const STANDARD_K = 16;
 
@@ -200,12 +199,11 @@ export function recalculateAll(players: Player[], matches: Match[]): Recalculate
     return { finalStates: states, matchChanges };
 }
 
-/** Trạng thái xếp hạng: chưa đủ 12 trận → tạm tính; nghỉ 3 tháng → inactive. */
+/** Trạng thái xếp hạng: mọi người đều chính thức; nghỉ 3 tháng → inactive. */
 export function getRankStatus(
     player: Pick<Player, "matchesPlayed" | "lastMatchAt">,
     now: Date = new Date()
 ): RankStatus {
-    if (player.matchesPlayed < MIN_OFFICIAL_MATCHES) return "provisional";
     if (player.lastMatchAt) {
         const last = new Date(player.lastMatchAt);
         const cutoff = new Date(now);

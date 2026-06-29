@@ -177,4 +177,4 @@ export interface Announcement {
     createdAt: string;
 }
 
-export type RankStatus = "official" | "provisional" | "inactive";
+export type RankStatus = "official" | "inactive";

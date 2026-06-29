@@ -9,7 +9,6 @@ import { Medal } from "lucide-react";
 
 const STATUS_LABEL: Record<RankStatus, { label: string; cls: string } | null> = {
     official: null,
-    provisional: { label: "Tạm tính", cls: "bg-amber-100 text-amber-700" },
     inactive: { label: "Nghỉ dài", cls: "bg-gray-200 text-gray-500" },
 };
 
