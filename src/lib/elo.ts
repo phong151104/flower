@@ -4,9 +4,8 @@
 //
 // Elo cá nhân, đánh đôi: rating đội = trung bình Elo 2 người.
 // Elo mới = Elo cũ + K × H × M × (S − E)
-// Rule gốc viết "cả đội cộng/trừ như nhau" nhưng K phụ thuộc
-// từng người (số trận/số giải đã chơi), nên phần H × M × (S − E)
-// là chung cho cả đội, nhân với K riêng của từng người.
+// K dùng chung cho tất cả người chơi để bảng đã ổn định không bị rung mạnh.
+// Phần H × M × (S − E) vẫn phản ánh độ khó trận, chênh lệch tỷ số và vòng đấu.
 // ============================================================
 
 import type { Player, Match, EloChange, MatchRound, RankStatus } from "@/types/club";
@@ -20,6 +19,7 @@ export const TIER_ELO: Record<number, number> = {
 
 export const MIN_OFFICIAL_MATCHES = 12;
 export const INACTIVE_MONTHS = 3;
+export const STANDARD_K = 16;
 
 /** Trạng thái tích lũy của một người dùng khi replay lịch sử trận. */
 export interface PlayerEloState {
@@ -38,12 +38,9 @@ export function expectedScore(ratingA: number, ratingB: number): number {
     return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
 }
 
-/** Hệ số K: người mới 10 trận đầu 40 → 3 giải đầu 32 → ổn định 24 → từ 30 trận 16. */
-export function getK(state: Pick<PlayerEloState, "matchesPlayed" | "tournamentsPlayed">): number {
-    if (state.matchesPlayed < 10) return 40;
-    if (state.tournamentsPlayed < 3) return 32;
-    if (state.matchesPlayed < 30) return 24;
-    return 16;
+/** Hệ số K cố định: mọi người cộng/trừ cùng hệ số, không ưu tiên người mới. */
+export function getK(_state: Pick<PlayerEloState, "matchesPlayed" | "tournamentsPlayed">): number {
+    return STANDARD_K;
 }
 
 /** Hệ số cách biệt tỷ số. */
