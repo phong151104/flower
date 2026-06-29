@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import RankingTable from "@/components/club/RankingTable";
+import RankingsView from "@/components/club/RankingsView";
 
 export const metadata = {
     title: "Bảng xếp hạng Elo — PickleClub",
@@ -17,9 +17,7 @@ export default function RankingsPage() {
                         Xếp hạng theo Elo cá nhân — cần tối thiểu 12 trận để được xếp hạng chính thức.
                     </p>
                 </div>
-                <div className="animate-slide-up">
-                    <RankingTable />
-                </div>
+                <RankingsView />
             </main>
             <Footer />
         </>
