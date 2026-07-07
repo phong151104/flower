@@ -77,7 +77,7 @@ export default function AdminMatchesPage() {
 
     const handleDelete = async (m: Match) => {
         const desc = `${name(m.teamAPlayer1)}/${name(m.teamAPlayer2)} vs ${name(m.teamBPlayer1)}/${name(m.teamBPlayer2)} (${m.scoreA}-${m.scoreB})`;
-        if (confirm(`Xóa trận: ${desc}?\n\nSau khi xóa, hãy bấm "Tính lại toàn bộ Elo" để cập nhật.`)) {
+        if (confirm(`Xóa trận: ${desc}?\n\nElo và W/L sẽ tự bù ngược theo delta đã lưu của trận này.`)) {
             await deleteMatch(m.id);
             setRecalcDone(false);
         }
@@ -136,7 +136,7 @@ export default function AdminMatchesPage() {
                 <div>
                     <h1 className="text-2xl font-bold">Quản lý trận đấu</h1>
                     <p className="text-gray-400 text-sm mt-1">
-                        Sau khi sửa/xóa trận, bấm &quot;Tính lại toàn bộ Elo&quot; để replay lịch sử
+                        Xóa trận sẽ tự bù Elo theo delta đã lưu. Nút replay chỉ dùng khi muốn tính lại toàn bộ bằng công thức hiện tại.
                     </p>
                 </div>
                 <button
@@ -145,7 +145,7 @@ export default function AdminMatchesPage() {
                     className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors"
                 >
                     <RefreshCw size={16} className={recalculating ? "animate-spin" : ""} />
-                    {recalculating ? "Đang tính lại..." : "Tính lại toàn bộ Elo"}
+                    {recalculating ? "Đang tính lại..." : "Replay toàn bộ Elo"}
                 </button>
             </div>
 

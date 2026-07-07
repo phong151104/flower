@@ -51,6 +51,7 @@ interface ClubContextType {
     }) => Promise<EloChange[]>;
     addMatch: (match: Omit<Match, "id" | "createdAt">) => Promise<void>;
     updateMatch: (id: string, updates: Partial<Omit<Match, "id" | "createdAt">>) => Promise<void>;
+    /** Delete a match and roll back only that match's stored Elo/stat impact. */
     deleteMatch: (id: string) => Promise<void>;
     /** Ghi đè elo_changes nhiều trận + state players sau khi recalculate. */
     applyRecalculation: (
@@ -135,6 +136,22 @@ interface ClubContextType {
 const ClubContext = createContext<ClubContextType | undefined>(undefined);
 
 const generateId = () => Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+function matchPlayerIds(match: Match): string[] {
+    return [match.teamAPlayer1, match.teamAPlayer2, match.teamBPlayer1, match.teamBPlayer2];
+}
+
+function playerWasOnWinningTeam(match: Match, playerId: string): boolean {
+    const onTeamA = [match.teamAPlayer1, match.teamAPlayer2].includes(playerId);
+    return onTeamA === (match.winner === "A");
+}
+
+function latestMatchAtForPlayer(matches: Match[], playerId: string): string | undefined {
+    return matches
+        .filter((m) => matchPlayerIds(m).includes(playerId))
+        .sort((a, b) => b.playedAt.localeCompare(a.playedAt))[0]?.playedAt;
+}
 
 // ============ DB CONVERTERS (snake_case ↔ camelCase) ============
 
@@ -740,12 +757,60 @@ export function ClubProvider({ children }: { children: ReactNode }) {
 
     const deleteMatch = useCallback(
         async (id: string) => {
-            setMatches((prev) => prev.filter((m) => m.id !== id));
+            const match = matches.find((m) => m.id === id);
+            const remainingMatches = matches.filter((m) => m.id !== id);
+            const rollbackUpdates: { id: string; updates: Partial<Player> }[] = [];
+
+            if (match?.eloChanges?.length) {
+                for (const change of match.eloChanges) {
+                    const player = players.find((p) => p.id === change.playerId);
+                    if (!player) continue;
+
+                    const won = playerWasOnWinningTeam(match, change.playerId);
+                    const updates: Partial<Player> = {
+                        currentElo: round2(player.currentElo - change.delta),
+                        matchesPlayed: Math.max(0, player.matchesPlayed - 1),
+                        wins: Math.max(0, player.wins - (won ? 1 : 0)),
+                        losses: Math.max(0, player.losses - (won ? 0 : 1)),
+                        lastMatchAt: latestMatchAtForPlayer(remainingMatches, change.playerId) || "",
+                    };
+
+                    if (match.tournamentId) {
+                        const stillPlayedTournament = remainingMatches.some(
+                            (m) =>
+                                m.tournamentId === match.tournamentId &&
+                                matchPlayerIds(m).includes(change.playerId)
+                        );
+                        if (!stillPlayedTournament) {
+                            updates.tournamentsPlayed = Math.max(0, player.tournamentsPlayed - 1);
+                        }
+                    }
+
+                    rollbackUpdates.push({ id: change.playerId, updates });
+                }
+            }
+
+            setPlayers((prev) =>
+                prev.map((p) => {
+                    const rollback = rollbackUpdates.find((u) => u.id === p.id);
+                    return rollback ? { ...p, ...rollback.updates } : p;
+                })
+            );
+            setMatches(() => remainingMatches);
+
             if (dbReady && supabase) {
-                await supabase.from("matches").delete().eq("id", id);
+                for (const rollback of rollbackUpdates) {
+                    const { error } = await supabase
+                        .from("players")
+                        .update(playerToDb(rollback.updates))
+                        .eq("id", rollback.id);
+                    if (error) console.error("Player rollback failed:", error.message);
+                }
+                const { error } = await supabase.from("matches").delete().eq("id", id);
+                if (error) console.error("Match delete failed:", error.message);
             }
         },
-        [dbReady]
+        [dbReady, matches, players]
     );
 
     const applyRecalculation = useCallback(
