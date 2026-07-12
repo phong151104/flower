@@ -4,6 +4,7 @@
 
 import type { Player, Match } from "@/types/club";
 import { getRankStatus } from "@/lib/elo";
+import { getTeamPlayerIds } from "@/lib/match";
 
 export interface HeadToHead {
     opponentId: string;
@@ -24,7 +25,7 @@ export interface PlayerMatchView {
     isTeamA: boolean;
     won: boolean;
     partnerId: string;
-    opponentIds: [string, string];
+    opponentIds: string[];
     delta: number;
     eloAfter: number;
 }
@@ -33,8 +34,8 @@ export interface PlayerMatchView {
 export function getPlayerMatches(playerId: string, matches: Match[]): PlayerMatchView[] {
     const result: PlayerMatchView[] = [];
     for (const m of matches) {
-        const teamA = [m.teamAPlayer1, m.teamAPlayer2];
-        const teamB = [m.teamBPlayer1, m.teamBPlayer2];
+        const teamA = getTeamPlayerIds(m, "A");
+        const teamB = getTeamPlayerIds(m, "B");
         const isTeamA = teamA.includes(playerId);
         if (!isTeamA && !teamB.includes(playerId)) continue;
         const myTeam = isTeamA ? teamA : teamB;
@@ -45,7 +46,7 @@ export function getPlayerMatches(playerId: string, matches: Match[]): PlayerMatc
             isTeamA,
             won: (m.winner === "A") === isTeamA,
             partnerId: myTeam.find((id) => id !== playerId) || "",
-            opponentIds: [otherTeam[0], otherTeam[1]],
+            opponentIds: otherTeam,
             delta: change?.delta ?? 0,
             eloAfter: change?.after ?? 0,
         });
@@ -58,6 +59,7 @@ export function getHeadToHead(playerId: string, matches: Match[]): HeadToHead[] 
     const map = new Map<string, HeadToHead>();
     for (const v of getPlayerMatches(playerId, matches)) {
         for (const oppId of v.opponentIds) {
+            if (!oppId) continue;
             const h2h = map.get(oppId) || { opponentId: oppId, wins: 0, losses: 0 };
             if (v.won) h2h.wins += 1;
             else h2h.losses += 1;

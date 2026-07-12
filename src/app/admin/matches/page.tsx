@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useClub } from "@/context/ClubContext";
 import { recalculateAll } from "@/lib/elo";
+import { formatTeamNames, getMatchFormat } from "@/lib/match";
 import { findTeamByPlayers } from "@/lib/tournament";
 import type { Match, MatchRound, Player } from "@/types/club";
 import { Trash2, RefreshCw, Swords, Pencil, X } from "lucide-react";
@@ -44,6 +45,7 @@ export default function AdminMatchesPage() {
     const [editRound, setEditRound] = useState<MatchRound>("group");
 
     const name = (id: string) => players.find((p) => p.id === id)?.name || "(đã xóa)";
+    const teamName = (m: Match, side: "A" | "B") => formatTeamNames(m, side, name);
 
     const runRecalculation = async () => {
         setRecalculating(true);
@@ -76,7 +78,7 @@ export default function AdminMatchesPage() {
     };
 
     const handleDelete = async (m: Match) => {
-        const desc = `${name(m.teamAPlayer1)}/${name(m.teamAPlayer2)} vs ${name(m.teamBPlayer1)}/${name(m.teamBPlayer2)} (${m.scoreA}-${m.scoreB})`;
+        const desc = `${teamName(m, "A")} vs ${teamName(m, "B")} (${m.scoreA}-${m.scoreB})`;
         if (confirm(`Xóa trận: ${desc}?\n\nElo và W/L sẽ tự bù ngược theo delta đã lưu của trận này.`)) {
             await deleteMatch(m.id);
             setRecalcDone(false);
@@ -116,6 +118,10 @@ export default function AdminMatchesPage() {
         }
         if (editType === "tournament" && !editTournamentId) {
             alert("Vui lòng chọn giải đấu");
+            return;
+        }
+        if (getMatchFormat(editing) === "singles" && editType === "tournament") {
+            alert("Trận 1v1 chỉ áp dụng cho trận tập");
             return;
         }
         await updateMatch(editing.id, {
@@ -192,18 +198,18 @@ export default function AdminMatchesPage() {
                                             <td className="px-4 py-3">
                                                 {m.matchType === "tournament" ? (
                                                     <span className="px-2 py-0.5 bg-amber-500/15 text-amber-400 rounded text-xs whitespace-nowrap">
-                                                        {tour?.name || "Giải"}
+                                                        {tour?.name || "Giải"} · 2v2
                                                     </span>
                                                 ) : (
                                                     <span className="px-2 py-0.5 bg-gray-800 text-gray-400 rounded text-xs">
-                                                        Tập
+                                                        Tập · {getMatchFormat(m) === "singles" ? "1v1" : "2v2"}
                                                     </span>
                                                 )}
                                             </td>
                                             <td
                                                 className={`px-4 py-3 ${m.winner === "A" ? "text-white font-medium" : "text-gray-500"}`}
                                             >
-                                                {name(m.teamAPlayer1)} + {name(m.teamAPlayer2)}
+                                                {teamName(m, "A")}
                                             </td>
                                             <td className="px-4 py-3 text-center font-mono font-bold whitespace-nowrap">
                                                 {m.scoreA} : {m.scoreB}
@@ -211,7 +217,7 @@ export default function AdminMatchesPage() {
                                             <td
                                                 className={`px-4 py-3 ${m.winner === "B" ? "text-white font-medium" : "text-gray-500"}`}
                                             >
-                                                {name(m.teamBPlayer1)} + {name(m.teamBPlayer2)}
+                                                {teamName(m, "B")}
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <div className="flex items-center justify-end gap-1">
@@ -260,9 +266,12 @@ export default function AdminMatchesPage() {
                             </button>
                         </div>
                         <p className="text-sm text-gray-400 mb-4">
-                            {name(editing.teamAPlayer1)} + {name(editing.teamAPlayer2)}
+                            {teamName(editing, "A")}
                             <span className="mx-2 text-gray-600">vs</span>
-                            {name(editing.teamBPlayer1)} + {name(editing.teamBPlayer2)}
+                            {teamName(editing, "B")}
+                            <span className="ml-2 rounded bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
+                                {getMatchFormat(editing) === "singles" ? "1v1" : "2v2"}
+                            </span>
                         </p>
                         <form onSubmit={handleEditSubmit} className="space-y-4">
                             <div className="flex items-center justify-center gap-3">
@@ -299,10 +308,11 @@ export default function AdminMatchesPage() {
                                 <button
                                     type="button"
                                     onClick={() => setEditType("tournament")}
+                                    disabled={getMatchFormat(editing) === "singles"}
                                     className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                                         editType === "tournament"
                                             ? "bg-amber-600 text-white"
-                                            : "bg-gray-800 text-gray-400"
+                                            : "bg-gray-800 text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed"
                                     }`}
                                 >
                                     Trận giải
@@ -365,8 +375,8 @@ export default function AdminMatchesPage() {
                             )}
 
                             <p className="text-xs text-amber-400/80">
-                                ⚠ Sau khi lưu, nhớ bấm &quot;Tính lại toàn bộ Elo&quot; (hệ số vòng
-                                M thay đổi theo loại trận).
+                                ⚠ Lưu ở đây chỉ sửa dữ liệu trận. Nút replay sẽ tính lại toàn bộ
+                                lịch sử bằng công thức hiện tại.
                             </p>
                             <button
                                 type="submit"

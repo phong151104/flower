@@ -2,13 +2,14 @@
 // Logic tính Elo cho CLB pickleball — pure functions.
 // Spec: rule_xep_hang_elo_pickleball(1).md
 //
-// Elo cá nhân, đánh đôi: rating đội = trung bình Elo 2 người.
+// Elo cá nhân: 1v1 dùng Elo cá nhân, 2v2 dùng trung bình Elo 2 người.
 // Elo mới = Elo cũ + K × H × M × (S − E)
 // K dùng chung cho tất cả người chơi để bảng đã ổn định không bị rung mạnh.
 // Phần H × M × (S − E) vẫn phản ánh độ khó trận, chênh lệch tỷ số và vòng đấu.
 // ============================================================
 
-import type { Player, Match, EloChange, MatchRound, RankStatus } from "@/types/club";
+import { getMatchFormat, getMatchPlayerIds, getTeamPlayerIds } from "@/lib/match";
+import type { Player, Match, EloChange, MatchFormat, MatchRound, RankStatus } from "@/types/club";
 
 export const TIER_ELO: Record<number, number> = {
     1: 1300,
@@ -19,6 +20,8 @@ export const TIER_ELO: Record<number, number> = {
 
 export const INACTIVE_MONTHS = 3;
 export const STANDARD_K = 16;
+export const DOUBLES_ELO_WEIGHT = 1;
+export const SINGLES_ELO_WEIGHT = 0.5;
 
 /** Trạng thái tích lũy của một người dùng khi replay lịch sử trận. */
 export interface PlayerEloState {
@@ -33,8 +36,12 @@ export interface PlayerEloState {
     tournamentIds: Set<string>;
 }
 
-export function expectedScore(ratingA: number, ratingB: number): number {
-    return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+export function expectedScore(
+    ratingA: number,
+    ratingB: number,
+    eloWeight = DOUBLES_ELO_WEIGHT
+): number {
+    return 1 / (1 + Math.pow(10, ((ratingB - ratingA) * eloWeight) / 400));
 }
 
 /** Hệ số K cố định: mọi người cộng/trừ cùng hệ số, không ưu tiên người mới. */
@@ -85,19 +92,33 @@ export function getM(round?: MatchRound | null): number {
 }
 
 export interface MatchInput {
-    /** [A1, A2, B1, B2] — đúng thứ tự. */
-    players: [PlayerEloState, PlayerEloState, PlayerEloState, PlayerEloState];
+    teamA: PlayerEloState[];
+    teamB: PlayerEloState[];
     scoreA: number;
     scoreB: number;
+    matchFormat?: MatchFormat;
     round?: MatchRound | null;
 }
 
-/** Tính Elo thay đổi cho 4 người sau một trận. Không mutate input. */
+function averageElo(players: PlayerEloState[]): number {
+    return players.reduce((sum, player) => sum + player.elo, 0) / players.length;
+}
+
+function eloWeightForFormat(format: MatchFormat): number {
+    return format === "singles" ? SINGLES_ELO_WEIGHT : DOUBLES_ELO_WEIGHT;
+}
+
+/** Tính Elo thay đổi cho người chơi sau một trận. Không mutate input. */
 export function calculateMatchElo(input: MatchInput): EloChange[] {
-    const [a1, a2, b1, b2] = input.players;
-    const ratingA = (a1.elo + a2.elo) / 2;
-    const ratingB = (b1.elo + b2.elo) / 2;
-    const expectedA = expectedScore(ratingA, ratingB);
+    if (input.teamA.length === 0 || input.teamB.length === 0) {
+        throw new Error("Mỗi đội phải có ít nhất 1 người chơi");
+    }
+
+    const matchFormat = input.matchFormat || "doubles";
+    const eloWeight = eloWeightForFormat(matchFormat);
+    const ratingA = averageElo(input.teamA);
+    const ratingB = averageElo(input.teamB);
+    const expectedA = expectedScore(ratingA, ratingB, eloWeight);
     const expectedB = 1 - expectedA;
     const h = getH(input.scoreA - input.scoreB);
     const m = getM(input.round);
@@ -116,24 +137,33 @@ export function calculateMatchElo(input: MatchInput): EloChange[] {
             h,
             m,
             expected: round4(expected),
+            eloWeight,
         };
     };
 
     return [
-        change(a1, sA, expectedA),
-        change(a2, sA, expectedA),
-        change(b1, sB, expectedB),
-        change(b2, sB, expectedB),
+        ...input.teamA.map((p) => change(p, sA, expectedA)),
+        ...input.teamB.map((p) => change(p, sB, expectedB)),
     ];
 }
 
-/** Cập nhật state tích lũy của 4 người sau trận (mutate state — dùng trong replay). */
+/** Cập nhật state tích lũy của người chơi sau trận (mutate state — dùng trong replay). */
 export function applyMatchToStates(
     states: Map<string, PlayerEloState>,
-    match: Pick<Match, "teamAPlayer1" | "teamAPlayer2" | "teamBPlayer1" | "teamBPlayer2" | "winner" | "playedAt" | "tournamentId">,
+    match: Pick<
+        Match,
+        | "matchFormat"
+        | "teamAPlayer1"
+        | "teamAPlayer2"
+        | "teamBPlayer1"
+        | "teamBPlayer2"
+        | "winner"
+        | "playedAt"
+        | "tournamentId"
+    >,
     changes: EloChange[]
 ): void {
-    const teamA = [match.teamAPlayer1, match.teamAPlayer2];
+    const teamA = getTeamPlayerIds(match, "A");
     for (const c of changes) {
         const s = states.get(c.playerId);
         if (!s) continue;
@@ -160,7 +190,7 @@ export interface RecalculateResult {
 }
 
 /**
- * Replay toàn bộ lịch sử trận từ initial_elo — dùng khi admin sửa/xóa trận.
+ * Replay toàn bộ lịch sử trận từ initial_elo — công cụ admin cho các lần cần tính lại toàn cục.
  * `matches` phải được sắp theo playedAt tăng dần.
  */
 export function recalculateAll(players: Player[], matches: Match[]): RecalculateResult {
@@ -183,13 +213,17 @@ export function recalculateAll(players: Player[], matches: Match[]): Recalculate
     const matchChanges: RecalculateResult["matchChanges"] = [];
 
     for (const match of matches) {
-        const ids = [match.teamAPlayer1, match.teamAPlayer2, match.teamBPlayer1, match.teamBPlayer2];
+        const ids = getMatchPlayerIds(match);
         const ps = ids.map((id) => states.get(id));
         if (ps.some((p) => !p)) continue; // người chơi đã bị xóa — bỏ qua trận
+        const teamAIds = getTeamPlayerIds(match, "A");
+        const teamBIds = getTeamPlayerIds(match, "B");
         const changes = calculateMatchElo({
-            players: ps as [PlayerEloState, PlayerEloState, PlayerEloState, PlayerEloState],
+            teamA: teamAIds.map((id) => states.get(id)!),
+            teamB: teamBIds.map((id) => states.get(id)!),
             scoreA: match.scoreA,
             scoreB: match.scoreB,
+            matchFormat: getMatchFormat(match),
             round: match.round,
         });
         applyMatchToStates(states, match, changes);

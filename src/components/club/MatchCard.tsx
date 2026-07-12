@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useClub } from "@/context/ClubContext";
+import { getMatchFormat, getTeamPlayerIds } from "@/lib/match";
 import type { Match, MatchRound } from "@/types/club";
 import { Trophy, Dumbbell } from "lucide-react";
 
@@ -26,6 +27,9 @@ export default function MatchCard({ match, hideDate = false }: { match: Match; h
 
     const name = (id: string) => players.find((p) => p.id === id)?.name || "(đã xóa)";
     const delta = (id: string) => match.eloChanges.find((c) => c.playerId === id)?.delta;
+    const matchFormat = getMatchFormat(match);
+    const teamAIds = getTeamPlayerIds(match, "A");
+    const teamBIds = getTeamPlayerIds(match, "B");
 
     const tournament = match.tournamentId
         ? tournaments.find((t) => t.id === match.tournamentId)
@@ -72,11 +76,17 @@ export default function MatchCard({ match, hideDate = false }: { match: Match; h
                             <Trophy size={13} className="text-ball-500" />
                             {tournament?.name || "Giải đấu"}
                             {match.round && ` · ${ROUND_LABEL[match.round]}`}
+                            <span className="ml-1 rounded bg-ball-50 px-1.5 py-0.5 text-[10px] font-semibold text-ball-700">
+                                2v2
+                            </span>
                         </>
                     ) : (
                         <>
                             <Dumbbell size={13} />
                             Trận tập
+                            <span className="ml-1 rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">
+                                {matchFormat === "singles" ? "1v1" : "2v2"}
+                            </span>
                         </>
                     )}
                 </span>
@@ -91,8 +101,7 @@ export default function MatchCard({ match, hideDate = false }: { match: Match; h
                     }`}
                 >
                     <div className="flex flex-col gap-0.5">
-                        {renderPlayer(match.teamAPlayer1)}
-                        {renderPlayer(match.teamAPlayer2)}
+                        {teamAIds.map(renderPlayer)}
                     </div>
                 </div>
 
@@ -114,8 +123,7 @@ export default function MatchCard({ match, hideDate = false }: { match: Match; h
                     }`}
                 >
                     <div className="flex flex-col gap-0.5 items-end">
-                        {renderPlayer(match.teamBPlayer1)}
-                        {renderPlayer(match.teamBPlayer2)}
+                        {teamBIds.map(renderPlayer)}
                     </div>
                 </div>
             </div>

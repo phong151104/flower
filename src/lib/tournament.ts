@@ -9,8 +9,9 @@ import type { Match, MatchRound, TournamentTeam } from "@/types/club";
 export function findTeamByPlayers(
     teams: TournamentTeam[],
     p1: string,
-    p2: string
+    p2?: string
 ): TournamentTeam | undefined {
+    if (!p2) return undefined;
     return teams.find(
         (t) =>
             (t.player1Id === p1 && t.player2Id === p2) ||

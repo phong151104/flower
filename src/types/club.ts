@@ -3,6 +3,7 @@
 export type Tier = 1 | 2 | 3 | 4;
 
 export type Gender = "nam" | "nu" | "khac";
+export type MatchFormat = "singles" | "doubles";
 
 export interface Player {
     id: string;
@@ -48,18 +49,20 @@ export interface EloChange {
     h: number;
     m: number;
     expected: number;
+    eloWeight?: number;
 }
 
 export interface Match {
     id: string;
+    matchFormat: MatchFormat;
     matchType: "training" | "tournament";
     tournamentId?: string;
     round?: MatchRound;
     playedAt: string;
     teamAPlayer1: string;
-    teamAPlayer2: string;
+    teamAPlayer2?: string;
     teamBPlayer1: string;
-    teamBPlayer2: string;
+    teamBPlayer2?: string;
     scoreA: number;
     scoreB: number;
     winner: "A" | "B";

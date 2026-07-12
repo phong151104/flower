@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useClub } from "@/context/ClubContext";
 import { calculateMatchElo, type PlayerEloState } from "@/lib/elo";
 import { findTeamByPlayers } from "@/lib/tournament";
-import type { EloChange, MatchRound } from "@/types/club";
+import type { EloChange, MatchFormat, MatchRound } from "@/types/club";
 import PlayerSelect from "@/components/club/PlayerSelect";
 import { X, Swords, CheckCircle2, TrendingUp, TrendingDown } from "lucide-react";
 
@@ -50,6 +50,7 @@ export default function MatchForm({
     const [scoreA, setScoreA] = useState("");
     const [scoreB, setScoreB] = useState("");
     const [recordedBy, setRecordedBy] = useState("");
+    const [matchFormat, setMatchFormat] = useState<MatchFormat>("doubles");
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState<EloChange[] | null>(null);
@@ -65,12 +66,15 @@ export default function MatchForm({
     const tournamentId =
         fixedTournamentId || (selType === "tournament" ? selTournamentId : undefined);
     const round = fixedRound || (selType === "tournament" ? selRound : undefined);
+    const actualMatchFormat: MatchFormat = tournamentId ? "doubles" : matchFormat;
 
     // Các giải có thể chọn (chưa kết thúc), mới nhất trước
     const selectableTournaments = tournaments.filter((t) => t.status !== "completed");
 
-    const selectedIds = [a1, a2, b1, b2].filter(Boolean);
-    const allSelected = a1 && a2 && b1 && b2;
+    const selectedIds =
+        actualMatchFormat === "singles" ? [a1, b1].filter(Boolean) : [a1, a2, b1, b2].filter(Boolean);
+    const allSelected =
+        actualMatchFormat === "singles" ? Boolean(a1 && b1) : Boolean(a1 && a2 && b1 && b2);
     const sA = parseInt(scoreA, 10);
     const sB = parseInt(scoreB, 10);
     const scoresValid = !isNaN(sA) && !isNaN(sB) && sA >= 0 && sB >= 0 && sA !== sB;
@@ -87,12 +91,12 @@ export default function MatchForm({
     // Preview Elo (từ state local — kết quả chính thức tính lại với data fresh khi submit)
     const preview = useMemo<EloChange[] | null>(() => {
         if (!allSelected || !scoresValid) return null;
-        const ids = [a1, a2, b1, b2];
-        const states: PlayerEloState[] = [];
-        for (const id of ids) {
+        const teamAIds = actualMatchFormat === "singles" ? [a1] : [a1, a2];
+        const teamBIds = actualMatchFormat === "singles" ? [b1] : [b1, b2];
+        const toState = (id: string): PlayerEloState | null => {
             const p = players.find((x) => x.id === id);
             if (!p) return null;
-            states.push({
+            return {
                 id: p.id,
                 elo: p.currentElo,
                 matchesPlayed: p.matchesPlayed,
@@ -100,15 +104,20 @@ export default function MatchForm({
                 wins: p.wins,
                 losses: p.losses,
                 tournamentIds: new Set(),
-            });
-        }
+            };
+        };
+        const teamA = teamAIds.map(toState);
+        const teamB = teamBIds.map(toState);
+        if (teamA.some((p) => !p) || teamB.some((p) => !p)) return null;
         return calculateMatchElo({
-            players: states as [PlayerEloState, PlayerEloState, PlayerEloState, PlayerEloState],
+            teamA: teamA as PlayerEloState[],
+            teamB: teamB as PlayerEloState[],
             scoreA: sA,
             scoreB: sB,
+            matchFormat: actualMatchFormat,
             round,
         });
-    }, [a1, a2, b1, b2, sA, sB, allSelected, scoresValid, players, round]);
+    }, [a1, a2, b1, b2, sA, sB, allSelected, scoresValid, players, round, actualMatchFormat]);
 
     const playerName = (id: string) => {
         const p = players.find((x) => x.id === id);
@@ -118,11 +127,11 @@ export default function MatchForm({
     const handleSubmit = async () => {
         setError("");
         if (!allSelected) {
-            setError("Vui lòng chọn đủ 4 người chơi");
+            setError(actualMatchFormat === "singles" ? "Vui lòng chọn đủ 2 người chơi" : "Vui lòng chọn đủ 4 người chơi");
             return;
         }
-        if (new Set(selectedIds).size !== 4) {
-            setError("4 người chơi phải khác nhau");
+        if (new Set(selectedIds).size !== selectedIds.length) {
+            setError("Người chơi trong trận phải khác nhau");
             return;
         }
         if (!scoresValid) {
@@ -144,10 +153,11 @@ export default function MatchForm({
         setSubmitting(true);
         try {
             const changes = await recordMatch({
+                matchFormat: actualMatchFormat,
                 teamAPlayer1: a1,
-                teamAPlayer2: a2,
+                teamAPlayer2: actualMatchFormat === "doubles" ? a2 : undefined,
                 teamBPlayer1: b1,
-                teamBPlayer2: b2,
+                teamBPlayer2: actualMatchFormat === "doubles" ? b2 : undefined,
                 scoreA: sA,
                 scoreB: sB,
                 matchType: tournamentId ? "tournament" : "training",
@@ -256,6 +266,30 @@ export default function MatchForm({
                                         </button>
                                     </div>
 
+                                    {selType === "training" && (
+                                        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-navy-50 p-1">
+                                            {(
+                                                [
+                                                    ["doubles", "2v2"],
+                                                    ["singles", "1v1"],
+                                                ] as const
+                                            ).map(([value, label]) => (
+                                                <button
+                                                    key={value}
+                                                    type="button"
+                                                    onClick={() => setMatchFormat(value)}
+                                                    className={`py-2 rounded-xl text-sm font-semibold transition-colors ${
+                                                        matchFormat === value
+                                                            ? "bg-court-600 text-white shadow-sm"
+                                                            : "text-gray-500 hover:bg-white"
+                                                    }`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     {selType === "tournament" && (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             <select
@@ -299,21 +333,23 @@ export default function MatchForm({
                             {/* Đội A */}
                             <div className="bg-court-50 rounded-2xl p-4">
                                 <p className="text-xs font-semibold text-court-700 uppercase mb-2">
-                                    Đội A
+                                    {actualMatchFormat === "singles" ? "Người A" : "Đội A"}
                                 </p>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className={`grid gap-2 ${actualMatchFormat === "singles" ? "grid-cols-1" : "grid-cols-2"}`}>
                                     <PlayerSelect
                                         value={a1}
                                         onChange={setA1}
                                         excludeIds={selectedIds.filter((id) => id !== a1)}
                                         placeholder="Người 1"
                                     />
-                                    <PlayerSelect
-                                        value={a2}
-                                        onChange={setA2}
-                                        excludeIds={selectedIds.filter((id) => id !== a2)}
-                                        placeholder="Người 2"
-                                    />
+                                    {actualMatchFormat === "doubles" && (
+                                        <PlayerSelect
+                                            value={a2}
+                                            onChange={setA2}
+                                            excludeIds={selectedIds.filter((id) => id !== a2)}
+                                            placeholder="Người 2"
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -341,21 +377,23 @@ export default function MatchForm({
                             {/* Đội B */}
                             <div className="bg-navy-100 rounded-2xl p-4">
                                 <p className="text-xs font-semibold text-navy-700 uppercase mb-2">
-                                    Đội B
+                                    {actualMatchFormat === "singles" ? "Người B" : "Đội B"}
                                 </p>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className={`grid gap-2 ${actualMatchFormat === "singles" ? "grid-cols-1" : "grid-cols-2"}`}>
                                     <PlayerSelect
                                         value={b1}
                                         onChange={setB1}
                                         excludeIds={selectedIds.filter((id) => id !== b1)}
                                         placeholder="Người 1"
                                     />
-                                    <PlayerSelect
-                                        value={b2}
-                                        onChange={setB2}
-                                        excludeIds={selectedIds.filter((id) => id !== b2)}
-                                        placeholder="Người 2"
-                                    />
+                                    {actualMatchFormat === "doubles" && (
+                                        <PlayerSelect
+                                            value={b2}
+                                            onChange={setB2}
+                                            excludeIds={selectedIds.filter((id) => id !== b2)}
+                                            placeholder="Người 2"
+                                        />
+                                    )}
                                 </div>
                             </div>
 

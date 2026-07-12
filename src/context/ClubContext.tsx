@@ -6,6 +6,7 @@ import type {
     Player,
     Match,
     EloChange,
+    MatchFormat,
     MatchRound,
     TrainingSession,
     TrainingVote,
@@ -19,6 +20,7 @@ import type {
     Announcement,
 } from "@/types/club";
 import { calculateMatchElo, type PlayerEloState } from "@/lib/elo";
+import { getMatchFormat, getMatchPlayerIds, getTeamPlayerIds } from "@/lib/match";
 
 // ============ CONTEXT TYPE ============
 
@@ -34,13 +36,14 @@ interface ClubContextType {
     matches: Match[];
     /**
      * Ghi một trận hoàn chỉnh: fetch Elo mới nhất từ DB, tính Elo,
-     * insert trận + cập nhật 4 người chơi. Trả về EloChange[] để hiển thị.
+     * insert trận + cập nhật người chơi. Trả về EloChange[] để hiển thị.
      */
     recordMatch: (input: {
+        matchFormat?: MatchFormat;
         teamAPlayer1: string;
-        teamAPlayer2: string;
+        teamAPlayer2?: string;
         teamBPlayer1: string;
-        teamBPlayer2: string;
+        teamBPlayer2?: string;
         scoreA: number;
         scoreB: number;
         matchType: "training" | "tournament";
@@ -138,18 +141,14 @@ const ClubContext = createContext<ClubContextType | undefined>(undefined);
 const generateId = () => Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-function matchPlayerIds(match: Match): string[] {
-    return [match.teamAPlayer1, match.teamAPlayer2, match.teamBPlayer1, match.teamBPlayer2];
-}
-
 function playerWasOnWinningTeam(match: Match, playerId: string): boolean {
-    const onTeamA = [match.teamAPlayer1, match.teamAPlayer2].includes(playerId);
+    const onTeamA = getTeamPlayerIds(match, "A").includes(playerId);
     return onTeamA === (match.winner === "A");
 }
 
 function latestMatchAtForPlayer(matches: Match[], playerId: string): string | undefined {
     return matches
-        .filter((m) => matchPlayerIds(m).includes(playerId))
+        .filter((m) => getMatchPlayerIds(m).includes(playerId))
         .sort((a, b) => b.playedAt.localeCompare(a.playedAt))[0]?.playedAt;
 }
 
@@ -197,14 +196,15 @@ function playerToDb(p: Partial<Player>): Record<string, unknown> {
 function dbToMatch(row: Record<string, unknown>): Match {
     return {
         id: row.id as string,
+        matchFormat: (row.match_format as Match["matchFormat"]) || "doubles",
         matchType: row.match_type as Match["matchType"],
         tournamentId: (row.tournament_id as string) || undefined,
         round: (row.round as Match["round"]) || undefined,
         playedAt: row.played_at as string,
         teamAPlayer1: row.team_a_player1 as string,
-        teamAPlayer2: row.team_a_player2 as string,
+        teamAPlayer2: (row.team_a_player2 as string) || undefined,
         teamBPlayer1: row.team_b_player1 as string,
-        teamBPlayer2: row.team_b_player2 as string,
+        teamBPlayer2: (row.team_b_player2 as string) || undefined,
         scoreA: row.score_a as number,
         scoreB: row.score_b as number,
         winner: row.winner as "A" | "B",
@@ -217,15 +217,16 @@ function dbToMatch(row: Record<string, unknown>): Match {
 function matchToDb(m: Partial<Match>): Record<string, unknown> {
     const row: Record<string, unknown> = {};
     if (m.id !== undefined) row.id = m.id;
+    if (m.matchFormat !== undefined) row.match_format = m.matchFormat;
     if (m.matchType !== undefined) row.match_type = m.matchType;
     // Dùng "in" để cho phép set null khi gỡ trận khỏi giải (đổi về trận tập)
     if ("tournamentId" in m) row.tournament_id = m.tournamentId ?? null;
     if ("round" in m) row.round = m.round ?? null;
     if (m.playedAt !== undefined) row.played_at = m.playedAt;
     if (m.teamAPlayer1 !== undefined) row.team_a_player1 = m.teamAPlayer1;
-    if (m.teamAPlayer2 !== undefined) row.team_a_player2 = m.teamAPlayer2;
+    if ("teamAPlayer2" in m) row.team_a_player2 = m.teamAPlayer2 ?? null;
     if (m.teamBPlayer1 !== undefined) row.team_b_player1 = m.teamBPlayer1;
-    if (m.teamBPlayer2 !== undefined) row.team_b_player2 = m.teamBPlayer2;
+    if ("teamBPlayer2" in m) row.team_b_player2 = m.teamBPlayer2 ?? null;
     if (m.scoreA !== undefined) row.score_a = m.scoreA;
     if (m.scoreB !== undefined) row.score_b = m.scoreB;
     if (m.winner !== undefined) row.winner = m.winner;
@@ -612,10 +613,11 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     // ---- Matches ----
     const recordMatch = useCallback(
         async (input: {
+            matchFormat?: MatchFormat;
             teamAPlayer1: string;
-            teamAPlayer2: string;
+            teamAPlayer2?: string;
             teamBPlayer1: string;
-            teamBPlayer2: string;
+            teamBPlayer2?: string;
             scoreA: number;
             scoreB: number;
             matchType: "training" | "tournament";
@@ -624,19 +626,37 @@ export function ClubProvider({ children }: { children: ReactNode }) {
             recordedBy?: string;
             playedAt?: string;
         }): Promise<EloChange[]> => {
-            const ids = [input.teamAPlayer1, input.teamAPlayer2, input.teamBPlayer1, input.teamBPlayer2];
+            const isTournament = input.matchType === "tournament" || Boolean(input.tournamentId);
+            const matchFormat: MatchFormat = isTournament ? "doubles" : input.matchFormat || "doubles";
+            if (matchFormat === "doubles" && (!input.teamAPlayer2 || !input.teamBPlayer2)) {
+                throw new Error("Trận 2v2 cần đủ 4 người chơi");
+            }
+
+            const teamAIds =
+                matchFormat === "singles"
+                    ? [input.teamAPlayer1]
+                    : [input.teamAPlayer1, input.teamAPlayer2!];
+            const teamBIds =
+                matchFormat === "singles"
+                    ? [input.teamBPlayer1]
+                    : [input.teamBPlayer1, input.teamBPlayer2!];
+            const ids = [...teamAIds, ...teamBIds];
+
+            if (new Set(ids).size !== ids.length) {
+                throw new Error("Người chơi trong trận phải khác nhau");
+            }
 
             // Lấy Elo mới nhất từ DB ngay trước khi tính — giảm rủi ro stale
             // khi nhiều người ghi trận cùng lúc trên các thiết bị khác nhau.
             let freshPlayers: Player[] = players.filter((p) => ids.includes(p.id));
             if (supabase) {
                 const { data } = await supabase.from("players").select("*").in("id", ids);
-                if (data && data.length === 4) freshPlayers = data.map(dbToPlayer);
+                if (data && data.length === ids.length) freshPlayers = data.map(dbToPlayer);
             }
 
             const byId = new Map(freshPlayers.map((p) => [p.id, p]));
             if (ids.some((id) => !byId.has(id))) {
-                throw new Error("Không tìm thấy đủ 4 người chơi");
+                throw new Error("Không tìm thấy đủ người chơi");
             }
 
             const toState = (p: Player): PlayerEloState => ({
@@ -650,14 +670,11 @@ export function ClubProvider({ children }: { children: ReactNode }) {
             });
 
             const changes = calculateMatchElo({
-                players: ids.map((id) => toState(byId.get(id)!)) as [
-                    PlayerEloState,
-                    PlayerEloState,
-                    PlayerEloState,
-                    PlayerEloState
-                ],
+                teamA: teamAIds.map((id) => toState(byId.get(id)!)),
+                teamB: teamBIds.map((id) => toState(byId.get(id)!)),
                 scoreA: input.scoreA,
                 scoreB: input.scoreB,
+                matchFormat,
                 round: input.round,
             });
 
@@ -666,14 +683,15 @@ export function ClubProvider({ children }: { children: ReactNode }) {
 
             const newMatch: Match = {
                 id: crypto.randomUUID(),
+                matchFormat,
                 matchType: input.matchType,
                 tournamentId: input.tournamentId,
                 round: input.round,
                 playedAt,
                 teamAPlayer1: input.teamAPlayer1,
-                teamAPlayer2: input.teamAPlayer2,
+                teamAPlayer2: matchFormat === "doubles" ? input.teamAPlayer2 : undefined,
                 teamBPlayer1: input.teamBPlayer1,
-                teamBPlayer2: input.teamBPlayer2,
+                teamBPlayer2: matchFormat === "doubles" ? input.teamBPlayer2 : undefined,
                 scoreA: input.scoreA,
                 scoreB: input.scoreB,
                 winner,
@@ -688,8 +706,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                 if (error) console.error("Match insert failed:", error.message);
             }
 
-            // Cập nhật 4 người chơi
-            const teamAIds = [input.teamAPlayer1, input.teamAPlayer2];
+            // Cập nhật người chơi trong trận
             for (const c of changes) {
                 const p = byId.get(c.playerId)!;
                 const won = teamAIds.includes(c.playerId) === (winner === "A");
@@ -699,9 +716,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                     matches.some(
                         (m) =>
                             m.tournamentId === input.tournamentId &&
-                            [m.teamAPlayer1, m.teamAPlayer2, m.teamBPlayer1, m.teamBPlayer2].includes(
-                                c.playerId
-                            )
+                            getMatchPlayerIds(m).includes(c.playerId)
                     );
                 const updates: Partial<Player> = {
                     currentElo: c.after,
@@ -779,7 +794,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
                         const stillPlayedTournament = remainingMatches.some(
                             (m) =>
                                 m.tournamentId === match.tournamentId &&
-                                matchPlayerIds(m).includes(change.playerId)
+                                getMatchPlayerIds(m).includes(change.playerId)
                         );
                         if (!stillPlayedTournament) {
                             updates.tournamentsPlayed = Math.max(0, player.tournamentsPlayed - 1);

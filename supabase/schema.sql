@@ -54,6 +54,7 @@ create table tournament_teams (
 
 create table matches (
   id uuid primary key default gen_random_uuid(),
+  match_format text not null default 'doubles' check (match_format in ('singles','doubles')),
   match_type text not null check (match_type in ('training','tournament')),
   tournament_id uuid references tournaments(id) on delete set null,
   -- null nếu training. Vòng giải: group/semi/third/final (thể thức cũ) +
@@ -64,16 +65,24 @@ create table matches (
   )),
   played_at timestamptz not null default now(),
   team_a_player1 uuid not null references players(id),
-  team_a_player2 uuid not null references players(id),
+  team_a_player2 uuid references players(id),
   team_b_player1 uuid not null references players(id),
-  team_b_player2 uuid not null references players(id),
+  team_b_player2 uuid references players(id),
   score_a int not null check (score_a >= 0),
   score_b int not null check (score_b >= 0),
   winner text not null check (winner in ('A','B')),
-  -- snapshot Elo: [{playerId, before, after, delta, k, h, m, expected} x 4]
+  -- snapshot Elo: [{playerId, before, after, delta, k, h, m, expected, eloWeight} x 2 hoặc x 4]
   elo_changes jsonb not null,
   recorded_by text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint matches_format_players_check check (
+    (match_format = 'singles' and team_a_player2 is null and team_b_player2 is null)
+    or
+    (match_format = 'doubles' and team_a_player2 is not null and team_b_player2 is not null)
+  ),
+  constraint matches_singles_training_check check (
+    match_format <> 'singles' or match_type = 'training'
+  )
 );
 create index idx_matches_played_at on matches(played_at);
 create index idx_matches_tournament on matches(tournament_id);

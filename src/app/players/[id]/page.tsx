@@ -7,6 +7,7 @@ import EloChart from "@/components/club/EloChart";
 import MatchCard from "@/components/club/MatchCard";
 import { useClub } from "@/context/ClubContext";
 import { getRankStatus } from "@/lib/elo";
+import { getMatchFormat } from "@/lib/match";
 import {
     getPlayerMatches,
     getHeadToHead,
@@ -69,6 +70,16 @@ function groupPlayerMatchesByDate(matches: PlayerMatchView[]) {
     });
 }
 
+function summarizeMatchViews(items: PlayerMatchView[]) {
+    const wins = items.filter((item) => item.won).length;
+    return {
+        matches: items.length,
+        wins,
+        losses: items.length - wins,
+        winRate: items.length > 0 ? Math.round((wins / items.length) * 100) : 0,
+    };
+}
+
 export default function PlayerProfilePage({ params }: { params: { id: string } }) {
     const { id } = params;
     const { players, matches, isLoading } = useClub();
@@ -111,6 +122,16 @@ export default function PlayerProfilePage({ params }: { params: { id: string } }
     const playerMatches = getPlayerMatches(id, matches);
     const recentPlayerMatches = playerMatches.slice(0, 20);
     const matchGroups = groupPlayerMatchesByDate(recentPlayerMatches);
+    const singlesSummary = summarizeMatchViews(
+        playerMatches.filter((v) => getMatchFormat(v.match) === "singles")
+    );
+    const doublesSummary = summarizeMatchViews(
+        playerMatches.filter((v) => getMatchFormat(v.match) !== "singles")
+    );
+    const formatSummaries = [
+        { label: "Đơn 1v1", summary: singlesSummary },
+        { label: "Đôi 2v2", summary: doublesSummary },
+    ];
     const h2h = getHeadToHead(id, matches);
     const { best: bestPartner, all: partnerStats } = getPartnerStats(id, matches);
     const form = getRecentForm(id, matches);
@@ -186,6 +207,26 @@ export default function PlayerProfilePage({ params }: { params: { id: string } }
                         <p className="text-xs text-gray-500 mt-1">Tỷ lệ thắng</p>
                     </div>
                 </div>
+
+                {playerMatches.length > 0 && (
+                    <div className="grid sm:grid-cols-2 gap-3 mb-8">
+                        {formatSummaries.map(({ label, summary }) => {
+                            return (
+                                <div key={label} className="bg-white rounded-2xl shadow-card p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="font-semibold text-navy-900">{label}</p>
+                                        <span className="text-xs text-gray-400">{summary.matches} trận</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm font-mono">
+                                        <span className="text-court-600 font-semibold">{summary.wins}W</span>
+                                        <span className="text-red-500 font-semibold">{summary.losses}L</span>
+                                        <span className="text-gray-500">{summary.matches > 0 ? `${summary.winRate}%` : "—"}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {/* Phong độ */}
                 {form.length > 0 && (

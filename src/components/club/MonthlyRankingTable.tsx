@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useClub } from "@/context/ClubContext";
+import { getTeamPlayerIds } from "@/lib/match";
 import type { Match, Player } from "@/types/club";
 import { CalendarDays, TrendingDown, TrendingUp } from "lucide-react";
 
@@ -59,8 +60,8 @@ function monthlyRows(players: Player[], matches: Match[], month: string): Monthl
             if (row) row.delta += change.delta;
         }
 
-        const teamA = [match.teamAPlayer1, match.teamAPlayer2];
-        const teamB = [match.teamBPlayer1, match.teamBPlayer2];
+        const teamA = getTeamPlayerIds(match, "A");
+        const teamB = getTeamPlayerIds(match, "B");
         for (const playerId of [...teamA, ...teamB]) {
             const row = byId.get(playerId);
             if (!row) continue;

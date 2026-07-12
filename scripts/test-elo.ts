@@ -14,25 +14,40 @@ const mk = (id: string, elo: number) => ({
 });
 
 // Ví dụ rule file: Nam 1050 + Minh 1000 (R_A=1025) vs Huy 980 + Long 970 (R_B=975)
-// Thắng 11-6 → H=1.15, K=24 → delta ≈ ±11.84
+// Thắng 11-6 → H=1.15, K=16
 const changes = calculateMatchElo({
-    players: [mk("nam", 1050), mk("minh", 1000), mk("huy", 980), mk("long", 970)],
+    teamA: [mk("nam", 1050), mk("minh", 1000)],
+    teamB: [mk("huy", 980), mk("long", 970)],
     scoreA: 11,
     scoreB: 6,
+    matchFormat: "doubles",
 });
 console.log("Expected A:", expectedScore(1025, 975).toFixed(4), "(rule: ~0.571)");
-console.log("Delta Nam:", changes[0].delta, "(rule: ~+11.84)");
-console.log("Delta Huy:", changes[2].delta, "(rule: ~-11.84)");
-console.log("K/H/M:", changes[0].k, changes[0].h, changes[0].m, "(rule: 24/1.15/1)");
+console.log("Delta Nam:", changes[0].delta);
+console.log("Delta Huy:", changes[2].delta);
+console.log("K/H/M/weight:", changes[0].k, changes[0].h, changes[0].m, changes[0].eloWeight);
+
+// 1v1 dùng chung Elo nhưng làm mềm chênh lệch Elo bằng eloWeight=0.5
+const singles = calculateMatchElo({
+    teamA: [mk("strong", 1200)],
+    teamB: [mk("weak", 1000)],
+    scoreA: 11,
+    scoreB: 8,
+    matchFormat: "singles",
+});
+console.log("Singles expected A:", singles[0].expected, "(chênh 200 Elo nhưng weight 0.5)");
+console.log("Singles weight:", singles[0].eloWeight, "(kỳ vọng 0.5)");
 
 // Case chung kết M=1.50
 const final = calculateMatchElo({
-    players: [mk("a", 1025), mk("b", 1025), mk("c", 975), mk("d", 975)],
+    teamA: [mk("a", 1025), mk("b", 1025)],
+    teamB: [mk("c", 975), mk("d", 975)],
     scoreA: 11,
     scoreB: 6,
+    matchFormat: "doubles",
     round: "final",
 });
-console.log("Final M:", final[0].m, "— delta:", final[0].delta, "(≈ 24×1.15×1.5×0.4286 ≈ 17.75)");
+console.log("Final M:", final[0].m, "— delta:", final[0].delta);
 console.log("getM semi/third/final:", getM("semi"), getM("third"), getM("final"));
 console.log(
     "getK 5tr/15tr(2 giải)/15tr(3 giải)/35tr:",
@@ -67,6 +82,7 @@ const ps: Player[] = [
 
 const mkMatch = (id: string, playedAt: string, scoreA: number, scoreB: number): Match => ({
     id,
+    matchFormat: "doubles",
     matchType: "training",
     playedAt,
     teamAPlayer1: "p1",
@@ -83,10 +99,10 @@ const mkMatch = (id: string, playedAt: string, scoreA: number, scoreB: number): 
 const ms = [mkMatch("m1", "2026-06-01", 11, 8), mkMatch("m2", "2026-06-02", 7, 11)];
 const { finalStates, matchChanges } = recalculateAll(ps, ms);
 
-// Trận 1: 2 đội rating bằng nhau (1150 vs 1150) → E=0.5, K=40 (người mới), H=1.0 (cách biệt 3)
-// Delta trận 1 = 40 × 1.0 × 0.5 = ±20
-console.log("\nRecalc — trận 1 delta p1:", matchChanges[0].eloChanges[0].delta, "(kỳ vọng +20)");
+// Trận 1: 2 đội rating bằng nhau (1150 vs 1150) → E=0.5, K=16, H=1.0 (cách biệt 3)
+// Delta trận 1 = 16 × 1.0 × 0.5 = ±8
+console.log("\nRecalc — trận 1 delta p1:", matchChanges[0].eloChanges[0].delta, "(kỳ vọng +8)");
 const p1Final = finalStates.get("p1")!;
-console.log("Recalc — p1 sau 2 trận:", p1Final.elo, `(${p1Final.wins}T-${p1Final.losses}B, ${p1Final.matchesPlayed} trận)`);
+console.log("Recalc — p1 sau 2 trận:", p1Final.elo, `(${p1Final.wins}W-${p1Final.losses}L, ${p1Final.matchesPlayed} trận)`);
 const sumDelta = matchChanges.flatMap((mc) => mc.eloChanges).reduce((s, c) => s + c.delta, 0);
 console.log("Tổng delta toàn hệ thống (zero-sum):", Math.round(sumDelta * 100) / 100, "(kỳ vọng 0)");

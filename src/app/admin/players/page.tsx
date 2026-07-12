@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useClub } from "@/context/ClubContext";
+import { getMatchPlayerIds } from "@/lib/match";
 import { TIER_ELO } from "@/lib/elo";
 import type { Player, Tier } from "@/types/club";
 import { Plus, Pencil, Trash2, X, Users } from "lucide-react";
@@ -81,10 +82,7 @@ export default function AdminPlayersPage() {
     };
 
     const handleDelete = async (p: Player) => {
-        const hasMatches = matches.some(
-            (m) =>
-                [m.teamAPlayer1, m.teamAPlayer2, m.teamBPlayer1, m.teamBPlayer2].includes(p.id)
-        );
+        const hasMatches = matches.some((m) => getMatchPlayerIds(m).includes(p.id));
         const msg = hasMatches
             ? `${p.name} đã có lịch sử trận đấu. Xóa sẽ làm các trận liên quan bị bỏ qua khi tính lại Elo. Vẫn xóa?`
             : `Xóa thành viên ${p.name}?`;

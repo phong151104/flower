@@ -7,6 +7,7 @@ import MatchCard from "@/components/club/MatchCard";
 import MatchForm from "@/components/club/MatchForm";
 import PlayerSelect from "@/components/club/PlayerSelect";
 import { useClub } from "@/context/ClubContext";
+import { getMatchPlayerIds } from "@/lib/match";
 import type { Match } from "@/types/club";
 import { CalendarDays, Plus, Swords } from "lucide-react";
 
@@ -44,10 +45,7 @@ export default function MatchesPage() {
 
     const filtered = useMemo(() => matches.filter((m) => {
         if (filterType !== "all" && m.matchType !== filterType) return false;
-        if (
-            filterPlayer &&
-            ![m.teamAPlayer1, m.teamAPlayer2, m.teamBPlayer1, m.teamBPlayer2].includes(filterPlayer)
-        )
+        if (filterPlayer && !getMatchPlayerIds(m).includes(filterPlayer))
             return false;
         return true;
     }), [matches, filterPlayer, filterType]);

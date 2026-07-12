@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useClub } from "@/context/ClubContext";
+import { formatTeamNames } from "@/lib/match";
 import { getRankedPlayers } from "@/lib/stats";
 import { Users, Swords, CalendarDays, Wallet, Trophy, ArrowRight } from "lucide-react";
 
@@ -166,7 +167,7 @@ export default function AdminDashboard() {
                                                         : "text-gray-500"
                                                 }
                                             >
-                                                {name(m.teamAPlayer1)}/{name(m.teamAPlayer2)}
+                                                {formatTeamNames(m, "A", name)}
                                             </span>
                                             <span className="font-mono font-bold text-gray-300 mx-2">
                                                 {m.scoreA}:{m.scoreB}
@@ -178,7 +179,7 @@ export default function AdminDashboard() {
                                                         : "text-gray-500"
                                                 }
                                             >
-                                                {name(m.teamBPlayer1)}/{name(m.teamBPlayer2)}
+                                                {formatTeamNames(m, "B", name)}
                                             </span>
                                         </div>
                                     ))}
